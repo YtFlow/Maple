@@ -1,0 +1,165 @@
+{
+  "log": {
+    "level": "error"
+  },
+  "dns": {
+    "servers": [
+      "1.1.1.1",
+      "8.8.8.8"
+    ],
+    "hosts": {
+      "example.com": [
+        "192.168.0.1",
+        "192.168.0.2"
+      ],
+      "server.com": [
+        "192.168.0.3"
+      ]
+    }
+  },
+  "inbounds": [
+    {
+      "address": "127.0.0.1",
+      "port": 1087,
+      "protocol": "http"
+    },
+    {
+      "address": "127.0.0.1",
+      "port": 1086,
+      "protocol": "socks"
+    },
+    {
+      "protocol": "tun",
+      "settings": {
+        "name": "utun8",
+        "address": "10.10.0.2",
+        "netmask": "255.255.255.0",
+        "gateway": "10.10.0.1",
+        "mtu": 1500,
+        "fakeDnsInclude": [
+          "google"
+        ]
+      },
+      "tag": "tun_in"
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "failover",
+      "settings": {
+        "actors": [
+          "vmess_out",
+          "trojan_out"
+        ]
+      },
+      "tag": "failover_out"
+    },
+    {
+      "protocol": "chain",
+      "settings": {
+        "actors": [
+          "vmess_tls",
+          "vmess_ws",
+          "vmess"
+        ]
+      },
+      "tag": "vmess_out"
+    },
+    {
+      "protocol": "tls",
+      "tag": "vmess_tls"
+    },
+    {
+      "protocol": "ws",
+      "settings": {
+        "path": "/v2"
+      },
+      "tag": "vmess_ws"
+    },
+    {
+      "protocol": "vmess",
+      "settings": {
+        "address": "server.com",
+        "port": 443,
+        "uuid": "89ee4e17-aaad-49f6-91c4-6ea5990206bd"
+      },
+      "tag": "vmess"
+    },
+    {
+      "protocol": "chain",
+      "settings": {
+        "actors": [
+          "trojan_tls",
+          "trojan"
+        ]
+      },
+      "tag": "trojan_out"
+    },
+    {
+      "protocol": "tls",
+      "tag": "trojan_tls"
+    },
+    {
+      "protocol": "trojan",
+      "settings": {
+        "address": "server.com",
+        "password": "112358",
+        "port": 443
+      },
+      "tag": "trojan"
+    },
+    {
+      "protocol": "shadowsocks",
+      "settings": {
+        "address": "x.x.x.x",
+        "method": "chacha20-ietf-poly1305",
+        "password": "123456",
+        "port": 8389
+      },
+      "tag": "shadowsocks_out"
+    },
+    {
+      "protocol": "socks",
+      "settings": {
+        "address": "x.x.x.x",
+        "port": 1080
+      },
+      "tag": "socks_out"
+    },
+    {
+      "protocol": "direct",
+      "tag": "direct_out"
+    },
+    {
+      "protocol": "drop",
+      "tag": "drop_out"
+    }
+  ],
+  "rules": [
+    {
+      "ip": [
+        "8.8.8.8",
+        "8.8.4.4"
+      ],
+      "target": "failover_out"
+    },
+    {
+      "domain": [
+        "www.google.com"
+      ],
+      "target": "failover_out"
+    },
+    {
+      "domainSuffix": [
+        "google.com"
+      ],
+      "target": "failover_out"
+    },
+    {
+      "domainKeyword": [
+        "google"
+      ],
+      "target": "failover_out"
+    }
+  ]
+}

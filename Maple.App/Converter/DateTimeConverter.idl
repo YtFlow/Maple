@@ -1,0 +1,9 @@
+namespace Maple_App
+{
+    [bindable]
+    [default_interface]
+    runtimeclass DateTimeConverter : Windows.UI.Xaml.Data.IValueConverter
+    {
+        DateTimeConverter();
+    }
+}

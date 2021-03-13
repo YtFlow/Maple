@@ -1,0 +1,8 @@
+namespace Maple_Task
+{
+    [default_interface]
+    runtimeclass VpnTask : Windows.ApplicationModel.Background.IBackgroundTask
+    {
+        VpnTask();
+    }
+}

@@ -1,0 +1,15 @@
+import "./Model/ConfigViewModel.idl";
+
+namespace Maple_App
+{
+    [default_interface]
+    runtimeclass MainPage : Windows.UI.Xaml.Controls.Page
+    {
+        MainPage();
+
+        static Windows.UI.Xaml.DependencyProperty ConfigItemsProperty{ get; };
+
+        Windows.Foundation.Collections.IObservableVector<ConfigViewModel> ConfigItems{ get; };
+        Windows.UI.Xaml.Controls.ListView ConfigListView{ get; };
+    }
+}

@@ -1,0 +1,39 @@
+﻿<Page
+    x:Class="Maple_App.EditPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Maple_App"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Windows10FallCreatorsUpdate="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 5)"
+    xmlns:Windows10version1809="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 7)"
+    mc:Ignorable="d"
+    NavigationCacheMode="Disabled">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <CommandBar Grid.Row="0" DefaultLabelPosition="Right">
+            <CommandBar.PrimaryCommands>
+                <AppBarButton x:Name="SaveButton" IsEnabled="False" Icon="Save" Label="Save" Click="SaveButton_Click">
+                    <AppBarButton.Command>
+                        <Windows10version1809:StandardUICommand Kind="Save"/>
+                    </AppBarButton.Command>
+                </AppBarButton>
+                <AppBarButton Icon="Help" Label="Help" Click="HelpButton_Click">
+                    <Windows10FallCreatorsUpdate:AppBarButton.KeyboardAccelerators>
+                        <Windows10FallCreatorsUpdate:KeyboardAccelerator Key="F1"/>
+                    </Windows10FallCreatorsUpdate:AppBarButton.KeyboardAccelerators>
+                </AppBarButton>
+            </CommandBar.PrimaryCommands>
+        </CommandBar>
+        <RichEditBox
+            x:Name="EditBox"
+            Grid.Row="1"
+            FontFamily="Consolas"
+            IsColorFontEnabled="True"
+            TextChanging="EditBox_TextChanging"/>
+    </Grid>
+</Page>

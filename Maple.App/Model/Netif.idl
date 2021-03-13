@@ -1,0 +1,11 @@
+namespace Maple_App
+{
+    [bindable]
+    [default_interface]
+    runtimeclass Netif 
+    {
+        Netif();
+        String Desc{ get; };
+        String Addr{ get; };
+    }
+}

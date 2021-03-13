@@ -1,0 +1,15 @@
+namespace Maple_App
+{
+    [bindable]
+    [default_interface]
+    runtimeclass ConfigViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Windows.Storage.StorageFile File{ get; };
+        String Name{ get; };
+        Windows.Foundation.DateTime DateUpdated{ get; };
+        Boolean IsDefault{ get; set; };
+
+        Windows.Foundation.IAsyncAction Delete();
+        Windows.Foundation.IAsyncAction Rename(String newName);
+    }
+}
