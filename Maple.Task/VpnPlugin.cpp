@@ -38,7 +38,6 @@ namespace winrt::Maple_Task::implementation
         // routeScope.Ipv4ExclusionRoutes(std::vector<VpnRoute>{
         //     VpnRoute(HostName{ L"172.25.0.0" }, 16)
         // });
-        VpnDomainNameAssignment dnsAssignment{};
 
         const auto outputStreamAbi = winrt::detach_abi(backTransport.OutputStream());
         StopLeaf();
@@ -83,12 +82,22 @@ namespace winrt::Maple_Task::implementation
         const auto& outNetifW = ApplicationData::Current().LocalSettings().Values().TryLookup(NETIF_SETTING_KEY).try_as<hstring>().value_or(L"");
         const auto& confPath = winrt::to_string(confPathW);
         const auto& outNetif = winrt::to_string(outNetifW);
-        m_leaf = run_leaf(confPath.data(), outNetif == "" ? nullptr : outNetif.data());
+        thread_local std::vector<HostName> dnsHosts{};
+        m_leaf = run_leaf(confPath.data(), outNetif == "" ? nullptr : outNetif.data(), [](const char* dns) {
+            dnsHosts.push_back(HostName{ to_hstring(dns) });
+            });
         if (m_leaf == nullptr) {
             channel.TerminateConnection(L"Error initializing Leaf runtime.\r\nPlease check your configuration file and default interface.");
             StopLeaf();
             return;
         }
+        VpnDomainNameAssignment dnsAssignment{};
+        dnsAssignment.DomainNameList().Append(VpnDomainNameInfo(
+            L".",
+            VpnDomainNameType::Suffix,
+            single_threaded_vector(std::move(dnsHosts)),
+            single_threaded_vector(std::vector<HostName>())));
+
         channel.StartWithMainTransport(
             std::vector<HostName> { HostName{ L"192.168.3.1" } },
             nullptr,

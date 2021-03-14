@@ -2,7 +2,7 @@
 
 extern "C" {
     typedef void Leaf;
-    Leaf* run_leaf(const char* path, const char* bind_host);
+    Leaf* run_leaf(const char* path, const char* bind_host, void on_dns(const char*));
     void stop_leaf(Leaf* leaf);
 
     typedef void NetStackHandle;
