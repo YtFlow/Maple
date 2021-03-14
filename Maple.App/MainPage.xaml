@@ -28,8 +28,13 @@
                             x:Name="ConfigListView"
                             Grid.Row="0"
                             SelectionMode="Single"
+                            CanDragItems="True"
+                            AllowDrop="True"
                             ItemsSource="{x:Bind ConfigItems, Mode=OneWay}"
-                            SelectionChanged="ConfigListView_SelectionChanged">
+                            SelectionChanged="ConfigListView_SelectionChanged"
+                            DragItemsStarting="ConfigListView_DragItemsStarting"
+                            DragOver="ConfigListView_DragOver"
+                            Drop="ConfigListView_Drop">
                             <ListView.ItemContainerStyle>
                                 <Style TargetType="ListViewItem">
                                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>

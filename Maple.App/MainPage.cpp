@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "MainPage.h"
 #include "MainPage.g.cpp"
+#include <filesystem>
 #include <winrt/Windows.Networking.Vpn.h>
 #include "Model\Netif.h"
 
@@ -279,6 +280,59 @@ namespace winrt::Maple_App::implementation
         MainContentFrame().Navigate(xaml_typename<EditPage>(), e.AddedItems().First().Current());
     }
 
+    void MainPage::ConfigListView_DragItemsStarting(IInspectable const&, DragItemsStartingEventArgs const& e)
+    {
+        std::vector<IStorageItem> files;
+        files.reserve(static_cast<size_t>(e.Items().Size()));
+        for (const auto& obj : e.Items()) {
+            const auto& item = obj.try_as<Maple_App::ConfigViewModel>();
+            if (item == nullptr) {
+                continue;
+            }
+            files.push_back(item.File());
+        }
+        const auto& data = e.Data();
+        data.SetStorageItems(files);
+        data.RequestedOperation(DataPackageOperation::Copy);
+    }
+
+    void MainPage::ConfigListView_DragOver(IInspectable const&, DragEventArgs const& e)
+    {
+        if (static_cast<uint32_t>(e.AllowedOperations() & DataPackageOperation::Copy) == 0
+            || !e.DataView().Contains(StandardDataFormats::StorageItems())) {
+            e.AcceptedOperation(DataPackageOperation::None);
+            return;
+        }
+        e.AcceptedOperation(DataPackageOperation::Copy);
+    }
+    fire_and_forget MainPage::ConfigListView_Drop(IInspectable const&, DragEventArgs const& e)
+    {
+        const auto lifetime = get_strong();
+        const auto& dataView = e.DataView();
+        if (static_cast<uint32_t>(e.AllowedOperations() & DataPackageOperation::Copy) == 0
+            || !dataView.Contains(StandardDataFormats::StorageItems())) {
+            return;
+        }
+
+        const auto& items = co_await dataView.GetStorageItemsAsync();
+        const auto& targetDir = co_await InitializeConfigFolder();
+        for (const auto& item : items) {
+            const auto& file = item.try_as<IStorageFile>();
+            if (file == nullptr) {
+                continue;
+            }
+            auto ext = std::filesystem::path(std::wstring_view(file.Path())).extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(), [](const auto ch) {
+                return std::tolower(ch);
+                });
+            if (ext != ".json" && ext != ".conf") {
+                continue;
+            }
+            const auto& newFile = co_await file.CopyAsync(targetDir, file.Name(), NameCollisionOption::GenerateUniqueName);
+            ConfigItems().Append(co_await ConfigViewModel::FromFile(newFile, false));
+        }
+    }
+
     void MainPage::WindowWidth_CurrentStateChanged(IInspectable const&, VisualStateChangedEventArgs const& e)
     {
         const auto& state = e.NewState();
@@ -314,4 +368,3 @@ namespace winrt::Maple_App::implementation
         }
     }
 }
-

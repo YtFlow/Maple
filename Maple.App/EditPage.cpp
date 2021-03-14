@@ -20,8 +20,13 @@ namespace winrt::Maple_App::implementation
         const auto& param = e.Parameter().as<Maple_App::ConfigViewModel>();
 
         m_file = param.File();
-        const auto& text = co_await FileIO::ReadTextAsync(param.File(), UnicodeEncoding::Utf8);
-        EditBox().Document().SetText(TextSetOptions::None, text);
+        try {
+            const auto& text = co_await FileIO::ReadTextAsync(param.File(), UnicodeEncoding::Utf8);
+            EditBox().Document().SetText(TextSetOptions::None, text);
+        }
+        catch (const winrt::hresult_error&) {
+            EditBox().Document().SetText(TextSetOptions::None, L"Invalid configuration file");
+        }
         const auto weakThis = lifetime->get_weak();
         m_saveModifiedContent = [weakThis]() -> IAsyncAction {
             if (const auto self{ weakThis.get() }) {

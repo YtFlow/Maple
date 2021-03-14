@@ -4,6 +4,7 @@
 #include "Model/ConfigViewModel.h"
 
 using namespace winrt;
+using namespace Windows::ApplicationModel::DataTransfer;
 using namespace Windows::Foundation;
 using namespace Windows::Foundation::Collections;
 using namespace Windows::Storage;
@@ -34,6 +35,9 @@ namespace winrt::Maple_App::implementation
         void MainPivot_PivotItemLoaded(Pivot const& sender, PivotItemEventArgs const& args);
         void NetifCombobox_SelectionChanged(IInspectable const& sender, SelectionChangedEventArgs const& e);
         void ConfigListView_SelectionChanged(IInspectable const& sender, SelectionChangedEventArgs const& e);
+        void ConfigListView_DragItemsStarting(IInspectable const& sender, DragItemsStartingEventArgs const& e);
+        void ConfigListView_DragOver(IInspectable const& sender, DragEventArgs const& e);
+        fire_and_forget ConfigListView_Drop(IInspectable const& sender, DragEventArgs const& e);
         void ConfigItem_DoubleTapped(IInspectable const& sender, DoubleTappedRoutedEventArgs const& e);
         void WindowWidth_CurrentStateChanged(IInspectable const& sender, VisualStateChangedEventArgs const& e);
         void MainSplitView_PaneClosing(SplitView const& sender, SplitViewPaneClosingEventArgs const& args);
