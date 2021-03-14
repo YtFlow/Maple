@@ -166,8 +166,8 @@
     <Midl Include="Model\Netif.idl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="PropertySheet.props" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="EditPage.xaml" />
