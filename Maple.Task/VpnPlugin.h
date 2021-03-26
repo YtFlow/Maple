@@ -1,16 +1,16 @@
 #pragma once
 #include <queue>
 #include <mutex>
-#include "VpnPlugin.g.h"
 #include "leaf.h"
 #include "CustomBuffer.h"
 #include "winrt/Windows.Networking.Sockets.h"
+#include "winrt/Windows.Networking.Vpn.h"
 
 namespace winrt::Maple_Task::implementation
 {
     static const hstring CONFIG_PATH_SETTING_KEY = L"CONFIG_PATH";
     static const hstring NETIF_SETTING_KEY = L"NETIF";
-    struct VpnPlugin : VpnPluginT<VpnPlugin>
+    struct VpnPlugin : implements<VpnPlugin, Windows::Networking::Vpn::IVpnPlugIn>
     {
         VpnPlugin() = default;
 

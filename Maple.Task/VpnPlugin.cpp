@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "VpnPlugin.h"
-#include "VpnPlugin.g.cpp"
 #include "winrt/Windows.Storage.h"
 #include "winrt/Windows.Storage.Streams.h"
 

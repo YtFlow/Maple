@@ -181,7 +181,6 @@
     <None Include="PropertySheet.props" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="VpnPlugin.idl" />
     <Midl Include="VpnTask.idl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,7 +1,0 @@
-namespace Maple_Task
-{
-    [default_interface]
-    runtimeclass VpnPlugin : Windows.Networking.Vpn.IVpnPlugIn {
-
-}
-}

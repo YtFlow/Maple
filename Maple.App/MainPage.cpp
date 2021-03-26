@@ -323,7 +323,7 @@ namespace winrt::Maple_App::implementation
             }
             auto ext = std::filesystem::path(std::wstring_view(file.Path())).extension().string();
             std::transform(ext.begin(), ext.end(), ext.begin(), [](const auto ch) {
-                return std::tolower(ch);
+                return static_cast<char>(std::tolower(ch));
                 });
             if (ext != ".json" && ext != ".conf") {
                 continue;
