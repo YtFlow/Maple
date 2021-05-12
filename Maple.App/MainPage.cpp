@@ -7,6 +7,14 @@
 
 namespace winrt::Maple_App::implementation
 {
+    std::string getNormalizedExtentionFromPath(const winrt::hstring& path) {
+        auto ext = std::filesystem::path(std::wstring_view(path)).extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](const auto ch) {
+            return static_cast<char>(std::tolower(ch));
+            });
+        return ext;
+    }
+
     MainPage::MainPage()
     {
         InitializeComponent();
@@ -115,6 +123,11 @@ namespace winrt::Maple_App::implementation
 
     void MainPage::SetAsDefault(const Maple_App::ConfigViewModel& item)
     {
+        const auto name = getNormalizedExtentionFromPath(item.Name());
+        if (name != ".conf" && name != ".json") {
+            NotifyUser(L"A valid configuration file must end with .conf or .json.");
+            return;
+        }
         ApplicationData::Current().LocalSettings().Values().Insert(CONFIG_PATH_SETTING_KEY, box_value(item.File().Path()));
         m_defaultConfig.IsDefault(false);
         item.IsDefault(true);
@@ -198,7 +211,7 @@ namespace winrt::Maple_App::implementation
         const auto& renameDialog = RenameDialog();
         const auto& item = renameDialog.DataContext().as<Maple_App::ConfigViewModel>();
         if (item == nullptr) {
-            return;
+            co_return;
         }
         co_await item.Rename(RenameDialogText().Text());
         if (item == m_defaultConfig) {
@@ -276,8 +289,20 @@ namespace winrt::Maple_App::implementation
 
     void MainPage::ConfigListView_SelectionChanged(IInspectable const&, SelectionChangedEventArgs const& e)
     {
+        const auto& item = e.AddedItems().First().Current();
+        auto targetPage = xaml_typename<EditPage>();
+        const auto& config = item.try_as<Maple_App::ConfigViewModel>();
+        if (config != nullptr) {
+            const auto ext = getNormalizedExtentionFromPath(config.Name());
+            if (ext == ".mmdb") {
+                targetPage = xaml_typename<MmdbPage>();
+            }
+            else if (ext == ".dat") {
+                targetPage = xaml_typename<DatPage>();
+            }
+        }
         MainContentFrame().BackStack().Clear();
-        MainContentFrame().Navigate(xaml_typename<EditPage>(), e.AddedItems().First().Current());
+        MainContentFrame().Navigate(targetPage, item);
     }
 
     void MainPage::ConfigListView_DragItemsStarting(IInspectable const&, DragItemsStartingEventArgs const& e)
@@ -311,7 +336,7 @@ namespace winrt::Maple_App::implementation
         const auto& dataView = e.DataView();
         if (static_cast<uint32_t>(e.AllowedOperations() & DataPackageOperation::Copy) == 0
             || !dataView.Contains(StandardDataFormats::StorageItems())) {
-            return;
+            co_return;
         }
 
         const auto& items = co_await dataView.GetStorageItemsAsync();
@@ -321,11 +346,8 @@ namespace winrt::Maple_App::implementation
             if (file == nullptr) {
                 continue;
             }
-            auto ext = std::filesystem::path(std::wstring_view(file.Path())).extension().string();
-            std::transform(ext.begin(), ext.end(), ext.begin(), [](const auto ch) {
-                return static_cast<char>(std::tolower(ch));
-                });
-            if (ext != ".json" && ext != ".conf") {
+            auto ext = getNormalizedExtentionFromPath(file.Path());
+            if (ext != ".json" && ext != ".conf" && ext != ".mmdb" && ext != ".dat") {
                 continue;
             }
             const auto& newFile = co_await file.CopyAsync(targetDir, file.Name(), NameCollisionOption::GenerateUniqueName);

@@ -1,0 +1,21 @@
+﻿<Page
+    x:Class="Maple_App.DatPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Maple_App"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <StackPanel Orientation="Vertical" Padding="16, 16, 0, 0">
+        <TextBlock TextWrapping="Wrap">
+            <Run>Use</Run>
+            <Run FontFamily="Consolas">EXTERNAL</Run>
+            <Run>directives in a configuration file to make use of a V2Ray Domain List Community database. For more information, see</Run>
+            <Hyperlink NavigateUri="https://github.com/eycorsican/leaf/blob/master/README.zh.md#site">
+                https://github.com/eycorsican/leaf/blob/master/README.zh.md#site
+            </Hyperlink>
+            <Run>.</Run>
+        </TextBlock>
+    </StackPanel>
+</Page>

@@ -172,6 +172,8 @@
   <ItemGroup>
     <Page Include="EditPage.xaml" />
     <Page Include="MainPage.xaml" />
+    <Page Include="MmdbPage.xaml" />
+    <Page Include="DatPage.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Assets">

@@ -1,0 +1,30 @@
+﻿<Page
+    x:Class="Maple_App.MmdbPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Maple_App"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <StackPanel Orientation="Vertical" Padding="16, 16, 0, 0">
+        <TextBlock TextWrapping="Wrap">
+            <Run>Use</Run>
+            <Run FontFamily="Consolas">GEOIP</Run>
+            <Run>or</Run>
+            <Run FontFamily="Consolas">EXTERNAL</Run>
+            <Run>directives in a configuration file to make use of a</Run>
+            <Run FontFamily="Consolas">geo.mmdb</Run>
+            <Run>database. For more information, see</Run>
+            <Hyperlink NavigateUri="https://github.com/eycorsican/leaf/blob/master/README.zh.md">
+                https://github.com/eycorsican/leaf/blob/master/README.zh.md
+            </Hyperlink>
+            <Run>.</Run>
+        </TextBlock>
+        <TextBlock Margin="0, 8, 0, 0" TextWrapping="Wrap">
+            <Run>This product includes GeoLite2 data created by MaxMind, available from</Run>
+            <Hyperlink NavigateUri="https://www.maxmind.com">https://www.maxmind.com</Hyperlink>
+            <Run>.</Run>
+        </TextBlock>
+    </StackPanel>
+</Page>

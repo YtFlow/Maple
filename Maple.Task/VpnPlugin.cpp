@@ -77,8 +77,15 @@ namespace winrt::Maple_Task::implementation
             return;
         }
 
-        const auto& confPathW = ApplicationData::Current().LocalSettings().Values().TryLookup(CONFIG_PATH_SETTING_KEY).try_as<hstring>().value_or(L"");
-        const auto& outNetifW = ApplicationData::Current().LocalSettings().Values().TryLookup(NETIF_SETTING_KEY).try_as<hstring>().value_or(L"");
+        const auto& configFolderPath = Windows::Storage::ApplicationData::Current().LocalFolder().CreateFolderAsync(L"config", CreationCollisionOption::OpenIfExists).get().Path();
+        if (!SetEnvironmentVariable(L"ASSET_LOCATION", configFolderPath.data())) {
+            channel.TerminateConnection(L"Failed to set asset location: " + winrt::to_hstring((uint32_t)GetLastError()));
+            return;
+        }
+
+        const auto& localProperties = ApplicationData::Current().LocalSettings().Values();
+        const auto& confPathW = localProperties.TryLookup(CONFIG_PATH_SETTING_KEY).try_as<hstring>().value_or(L"");
+        const auto& outNetifW = localProperties.TryLookup(NETIF_SETTING_KEY).try_as<hstring>().value_or(L"");
         const auto& confPath = winrt::to_string(confPathW);
         const auto& outNetif = winrt::to_string(outNetifW);
         thread_local std::vector<HostName> dnsHosts{};

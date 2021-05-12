@@ -125,8 +125,16 @@
       <DependentUpon>Converter\DateTimeConverter.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="DatPage.h">
+      <DependentUpon>DatPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="EditPage.h">
       <DependentUpon>EditPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="MmdbPage.h">
+      <DependentUpon>MmdbPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="Model\ConfigViewModel.h">
@@ -149,10 +157,16 @@
     <ApplicationDefinition Include="App.xaml">
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="DatPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="EditPage.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="MainPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="MmdbPage.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
@@ -219,8 +233,16 @@
       <DependentUpon>Converter\DateTimeConverter.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="DatPage.cpp">
+      <DependentUpon>DatPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="EditPage.cpp">
       <DependentUpon>EditPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="MmdbPage.cpp">
+      <DependentUpon>MmdbPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="Model\ConfigViewModel.cpp">
@@ -249,12 +271,20 @@
     <Midl Include="Converter\DateTimeConverter.idl">
       <SubType>Designer</SubType>
     </Midl>
+    <Midl Include="DatPage.idl">
+      <DependentUpon>DatPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="EditPage.idl">
       <DependentUpon>EditPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="MainPage.idl">
       <DependentUpon>MainPage.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="MmdbPage.idl">
+      <DependentUpon>MmdbPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
     </Midl>
     <Midl Include="Model\ConfigViewModel.idl">
       <SubType>Designer</SubType>
