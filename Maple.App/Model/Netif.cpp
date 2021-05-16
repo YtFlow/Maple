@@ -58,7 +58,10 @@ namespace winrt::Maple_App::implementation
         // Allocate a 15 KB buffer to start with.
         outBufLen = WORKING_BUFFER_SIZE;
         std::array<WCHAR, ADDR_BUFFER_SIZE> addrBuf{};
-        const auto& sniffed = Netif::SniffOutboundAddress();
+        auto sniffed = Netif::SniffOutboundAddress();
+        if (sniffed == L"192.168.3.1") {
+            sniffed = {};
+        }
 
         do {
 

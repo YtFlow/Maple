@@ -160,6 +160,18 @@
         "google"
       ],
       "target": "failover_out"
+    },
+    {
+      "external": [
+        "site:cn"
+      ],
+      "target": "direct_out"
+    },
+    {
+      "external": [
+        "mmdb:cn"
+      ],
+      "target": "direct_out"
     }
   ]
 }
