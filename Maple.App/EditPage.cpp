@@ -104,7 +104,7 @@ namespace winrt::Maple_App::implementation
         SaveModifiedContent = nullptr;
         SaveButton().IsEnabled(false);
         hstring content{};
-        EditBox().Document().GetText(TextGetOptions::NoHidden | TextGetOptions::UseCrlf | TextGetOptions::AllowFinalEop, content);
+        EditBox().Document().GetText(TextGetOptions::NoHidden | TextGetOptions::UseCrlf, content);
         const auto data = to_string(content);
         co_return co_await FileIO::WriteBytesAsync(
             m_file,
