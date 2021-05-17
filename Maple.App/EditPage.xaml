@@ -10,6 +10,26 @@
     mc:Ignorable="d"
     NavigationCacheMode="Disabled">
 
+    <Page.Resources>
+        <ResourceDictionary>
+            <Flyout x:Name="ValidConfigFlyout">
+                <StackPanel Orientation="Horizontal">
+                    <SymbolIcon Symbol="Accept" VerticalAlignment="Center" Margin="0, 0, 8, 0"/>
+                    <TextBlock TextWrapping="Wrap">No error</TextBlock>
+                </StackPanel>
+            </Flyout>
+            <Flyout x:Name="InvalidConfigFlyout">
+                <StackPanel Orientation="Horizontal">
+                    <SymbolIcon Symbol="Important" VerticalAlignment="Center" Margin="0, 0, 8, 0"/>
+                    <TextBlock TextWrapping="Wrap">
+                        <Run>There is an error(s) in your configuration.</Run>
+                        <LineBreak/>
+                        <Run>Please check carefully and correct them.</Run>
+                    </TextBlock>
+                </StackPanel>
+            </Flyout>
+        </ResourceDictionary>
+    </Page.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

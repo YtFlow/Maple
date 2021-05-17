@@ -4,6 +4,7 @@
 #include "EditPage.g.cpp"
 #endif
 
+using namespace std::literals::chrono_literals;
 using namespace winrt;
 using namespace winrt::Windows::Storage::Streams;
 using namespace winrt::Windows::UI::Text;
@@ -52,14 +53,51 @@ namespace winrt::Maple_App::implementation
             m_loaded++;
         }
     }
-    void EditPage::SaveButton_Click(IInspectable const&, RoutedEventArgs const&) {
-        SaveDocument();
+    fire_and_forget EditPage::SaveButton_Click(IInspectable const& sender, RoutedEventArgs const&) {
+        const auto lifetime = get_strong();
+        const auto& placementTarget = sender.try_as<FrameworkElement>();
+        const auto currentValidateRequest = ++validateRequest;
+        ValidConfigFlyout().Hide();
+        InvalidConfigFlyout().Hide();
+        co_await SaveDocument();
+        if (validateRequest != currentValidateRequest) {
+            co_return;
+        }
+
+        // Validate
+        const auto& path = winrt::to_string(m_file.Path());
+        co_await winrt::resume_background();
+        const auto result = leaf_test_config(path.data());
+        co_await winrt::resume_foreground(Dispatcher());
+        if (validateRequest != currentValidateRequest) {
+            co_return;
+        }
+        switch (result)
+        {
+        case LEAF_ERR_OK:
+            ValidConfigFlyout().ShowAt(placementTarget);
+            break;
+        case LEAF_ERR_CONFIG:
+            InvalidConfigFlyout().ShowAt(placementTarget);
+            break;
+        default:
+            // TODO: handle errors
+            break;
+        }
+        co_await winrt::resume_after(2s);
+        co_await winrt::resume_foreground(Dispatcher());
+        if (validateRequest != currentValidateRequest) {
+            co_return;
+        }
+        ValidConfigFlyout().Hide();
+        InvalidConfigFlyout().Hide();
     }
     void EditPage::HelpButton_Click(IInspectable const&, RoutedEventArgs const&) {
         const auto _ = winrt::Windows::System::Launcher::LaunchUriAsync(Uri{ L"https://github.com/eycorsican/leaf/blob/master/README.zh.md" });
     }
     IAsyncAction EditPage::SaveDocument()
     {
+        const auto lifetime = get_strong();
         if (!SaveButton().IsEnabled()) {
             co_return;
         }
@@ -73,6 +111,4 @@ namespace winrt::Maple_App::implementation
             std::vector<uint8_t>(data.begin(), data.end()));
     }
 }
-
-
 

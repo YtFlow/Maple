@@ -15,6 +15,10 @@ using namespace Windows::UI::Xaml::Navigation;
 using namespace Maple_App;
 using namespace Maple_App::implementation;
 
+extern "C" void* lwip_strerr(uint8_t) {
+    return const_cast<char*>("");
+}
+
 /// <summary>
 /// Initializes the singleton application object.  This is the first line of authored code
 /// executed, and as such is the logical equivalent of main() or WinMain().
