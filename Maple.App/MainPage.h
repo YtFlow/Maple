@@ -15,8 +15,12 @@ using namespace Windows::UI::Xaml::Input;
 
 namespace winrt::Maple_App::implementation
 {
+    template<typename T>
+    concept ConvertableToIStorageItem = std::convertible_to<T, IStorageItem>;
+
     static const hstring CONFIG_PATH_SETTING_KEY = L"CONFIG_PATH";
     static const hstring NETIF_SETTING_KEY = L"NETIF";
+    std::string getNormalizedExtentionFromPath(const winrt::hstring& path);
     struct MainPage : MainPageT<MainPage>
     {
         MainPage();
@@ -31,6 +35,7 @@ namespace winrt::Maple_App::implementation
         void RenameDialogPrimaryButton_Click(IInspectable const& sender, ContentDialogButtonClickEventArgs const& e);
         void RenameDialogText_KeyDown(IInspectable const& sender, KeyRoutedEventArgs const& e);
         fire_and_forget ConfigCreateMenuItem_Click(IInspectable const& sender, RoutedEventArgs const& e);
+        fire_and_forget ConfigImportMenuItem_Click(IInspectable const& sender, RoutedEventArgs const& e);
         fire_and_forget ConfigDuplicateMenuItem_Click(IInspectable const& sender, RoutedEventArgs const& e);
         void MainPivot_PivotItemLoaded(Pivot const& sender, PivotItemEventArgs const& args);
         void NetifCombobox_SelectionChanged(IInspectable const& sender, SelectionChangedEventArgs const& e);
@@ -72,6 +77,25 @@ namespace winrt::Maple_App::implementation
         void SetAsDefault(const Maple_App::ConfigViewModel& item);
         fire_and_forget ConfirmRename();
         IAsyncAction LoadConfigs();
+
+        template<ConvertableToIStorageItem T>
+        IAsyncAction ImportFiles(const IVectorView<T>& items) {
+            const auto lifetime = get_strong();
+            const auto& targetDir = co_await InitializeConfigFolder();
+            // TODO: concurrency
+            for (const auto& item : items) {
+                const auto& file = item.try_as<IStorageFile>();
+                if (file == nullptr) {
+                    continue;
+                }
+                auto ext = getNormalizedExtentionFromPath(file.Path());
+                if (ext != ".json" && ext != ".conf" && ext != ".mmdb" && ext != ".dat") {
+                    continue;
+                }
+                const auto& newFile = co_await file.CopyAsync(targetDir, file.Name(), NameCollisionOption::GenerateUniqueName);
+                ConfigItems().Append(co_await ConfigViewModel::FromFile(newFile, false));
+            }
+        }
     };
 }
 

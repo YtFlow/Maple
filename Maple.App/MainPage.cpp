@@ -3,10 +3,13 @@
 #include "MainPage.g.cpp"
 #include <filesystem>
 #include <winrt/Windows.Networking.Vpn.h>
+#include <winrt/Windows.UI.ViewManagement.h>
 #include "Model\Netif.h"
 
 namespace winrt::Maple_App::implementation
 {
+    using namespace winrt::Windows::UI::ViewManagement;
+
     std::string getNormalizedExtentionFromPath(const winrt::hstring& path) {
         auto ext = std::filesystem::path(std::wstring_view(path)).extension().string();
         std::transform(ext.begin(), ext.end(), ext.begin(), [](const auto ch) {
@@ -238,6 +241,20 @@ namespace winrt::Maple_App::implementation
         RequestRenameItem(item);
     }
 
+    fire_and_forget MainPage::ConfigImportMenuItem_Click(IInspectable const& sender, RoutedEventArgs const& e)
+    {
+        const auto lifetime = get_strong();
+        bool unsnapped = ((ApplicationView::Value() != ApplicationViewState::Snapped) || ApplicationView::TryUnsnap());
+        if (!unsnapped)
+        {
+            co_await NotifyUser(L"Cannot unsnap the app.");
+            co_return;
+        }
+        ImportFilePicker().FileTypeFilter().ReplaceAll({ L".conf", L".json", L".mmdb", L".dat" });
+        const auto& files = co_await ImportFilePicker().PickMultipleFilesAsync();
+        co_await ImportFiles(files);
+    }
+
     fire_and_forget MainPage::ConfigDuplicateMenuItem_Click(IInspectable const& sender, RoutedEventArgs const&)
     {
         const auto lifetime = get_strong();
@@ -340,19 +357,7 @@ namespace winrt::Maple_App::implementation
         }
 
         const auto& items = co_await dataView.GetStorageItemsAsync();
-        const auto& targetDir = co_await InitializeConfigFolder();
-        for (const auto& item : items) {
-            const auto& file = item.try_as<IStorageFile>();
-            if (file == nullptr) {
-                continue;
-            }
-            auto ext = getNormalizedExtentionFromPath(file.Path());
-            if (ext != ".json" && ext != ".conf" && ext != ".mmdb" && ext != ".dat") {
-                continue;
-            }
-            const auto& newFile = co_await file.CopyAsync(targetDir, file.Name(), NameCollisionOption::GenerateUniqueName);
-            ConfigItems().Append(co_await ConfigViewModel::FromFile(newFile, false));
-        }
+        co_await ImportFiles(items);
     }
 
     void MainPage::WindowWidth_CurrentStateChanged(IInspectable const&, VisualStateChangedEventArgs const& e)
@@ -390,3 +395,4 @@ namespace winrt::Maple_App::implementation
         }
     }
 }
+

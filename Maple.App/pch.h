@@ -10,6 +10,7 @@
 #include <winrt/Windows.Foundation.Metadata.h>
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.Storage.FileProperties.h>
+#include <winrt/Windows.Storage.Pickers.h>
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Text.h>
 #include <winrt/Windows.UI.Xaml.h>
