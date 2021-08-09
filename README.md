@@ -46,6 +46,7 @@ Maple as a UWP app is distributed for sideloading only. When installed, it acts 
    - In the Connection name box, enter **Maple**.
    - In the Server name or address box, enter https://github.com/YtFlow/Maple .
    - Select Save.
+9. If any Proxy Server has a loopback address (`127.0.0.1` or `::1`), make sure Loopback Exemption is enabled for Maple. See https://docs.microsoft.com/en-us/previous-versions/windows/apps/hh770532(v=win.10) .
 
 ### Connect
 
