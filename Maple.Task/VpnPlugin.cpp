@@ -77,19 +77,24 @@ namespace winrt::Maple_Task::implementation
             return;
         }
 
-        const auto& configFolderPath = Windows::Storage::ApplicationData::Current().LocalFolder().CreateFolderAsync(L"config", CreationCollisionOption::OpenIfExists).get().Path();
-        if (!SetEnvironmentVariable(L"ASSET_LOCATION", configFolderPath.data())) {
-            channel.TerminateConnection(L"Failed to set asset location: " + winrt::to_hstring((uint32_t)GetLastError()));
+        const auto& appData = ApplicationData::Current();
+        const auto& configFolderPath = appData.LocalFolder().CreateFolderAsync(L"config", CreationCollisionOption::OpenIfExists).get().Path();
+        const auto& localProperties = appData.LocalSettings().Values();
+        const auto& outNetif = localProperties.TryLookup(NETIF_SETTING_KEY).try_as<hstring>().value_or(L"");
+        if (
+            !SetEnvironmentVariable(L"ASSET_LOCATION", configFolderPath.data())
+            || !SetEnvironmentVariable(L"LOG_NO_COLOR", L"true")
+            || !SetEnvironmentVariable(L"ENABLE_IPV6", L"true")
+            || !SetEnvironmentVariable(L"OUTBOUND_INTERFACE", outNetif.data())
+            ) {
+            channel.TerminateConnection(L"Failed to set environment variables: " + winrt::to_hstring((uint32_t)GetLastError()));
             return;
         }
 
-        const auto& localProperties = ApplicationData::Current().LocalSettings().Values();
         const auto& confPathW = localProperties.TryLookup(CONFIG_PATH_SETTING_KEY).try_as<hstring>().value_or(L"");
-        const auto& outNetifW = localProperties.TryLookup(NETIF_SETTING_KEY).try_as<hstring>().value_or(L"");
         const auto& confPath = winrt::to_string(confPathW);
-        const auto& outNetif = winrt::to_string(outNetifW);
         thread_local std::vector<HostName> dnsHosts{};
-        m_leaf = run_leaf(confPath.data(), outNetif == "" ? nullptr : outNetif.data(), [](const char* dns) {
+        m_leaf = run_leaf(confPath.data(), [](const char* dns) {
             dnsHosts.push_back(HostName{ to_hstring(dns) });
             });
         if (m_leaf == nullptr) {
