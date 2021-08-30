@@ -1,0 +1,8 @@
+namespace Maple_App
+{
+    [default_interface]
+    runtimeclass CertPage : Windows.UI.Xaml.Controls.Page
+    {
+        CertPage();
+    }
+}

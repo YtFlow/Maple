@@ -175,6 +175,7 @@
     <Page Include="MainPage.xaml" />
     <Page Include="MmdbPage.xaml" />
     <Page Include="DatPage.xaml" />
+    <Page Include="CertPage.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Assets">

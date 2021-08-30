@@ -148,6 +148,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CertPage.h">
+      <DependentUpon>CertPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="Converter\DateTimeConverter.h">
       <DependentUpon>Converter\DateTimeConverter.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -185,6 +189,9 @@
     <ApplicationDefinition Include="App.xaml">
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="CertPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="DatPage.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -257,6 +264,10 @@
     <Image Include="Assets\Wide310x150Logo.scale-400.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CertPage.cpp">
+      <DependentUpon>CertPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="Converter\DateTimeConverter.cpp">
       <DependentUpon>Converter\DateTimeConverter.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -295,6 +306,10 @@
   <ItemGroup>
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="CertPage.idl">
+      <DependentUpon>CertPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
     </Midl>
     <Midl Include="Converter\DateTimeConverter.idl">
       <SubType>Designer</SubType>

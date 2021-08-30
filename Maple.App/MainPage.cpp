@@ -250,7 +250,7 @@ namespace winrt::Maple_App::implementation
             co_await NotifyUser(L"Cannot unsnap the app.");
             co_return;
         }
-        ImportFilePicker().FileTypeFilter().ReplaceAll({ L".conf", L".json", L".mmdb", L".dat" });
+        ImportFilePicker().FileTypeFilter().ReplaceAll({ L".conf", L".json", L".mmdb", L".dat", L".cer", L".crt" });
         const auto& files = co_await ImportFilePicker().PickMultipleFilesAsync();
         co_await ImportFiles(files);
     }
@@ -316,6 +316,9 @@ namespace winrt::Maple_App::implementation
             }
             else if (ext == ".dat") {
                 targetPage = xaml_typename<DatPage>();
+            }
+            else if (ext == ".cer" || ext == ".crt") {
+                targetPage = xaml_typename<CertPage>();
             }
         }
         MainContentFrame().BackStack().Clear();

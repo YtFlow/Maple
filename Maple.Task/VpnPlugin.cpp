@@ -98,7 +98,7 @@ namespace winrt::Maple_Task::implementation
             dnsHosts.push_back(HostName{ to_hstring(dns) });
             });
         if (m_leaf == nullptr) {
-            channel.TerminateConnection(L"Error initializing Leaf runtime.\r\nPlease check your configuration file and default interface.");
+            channel.TerminateConnection(L"Error initializing Leaf runtime.\r\nPlease check your configuration file and default interface.\r\nPlease make sure all associated files (.dat, .mmdb, .cer) exist.");
             StopLeaf();
             return;
         }

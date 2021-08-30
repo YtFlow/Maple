@@ -89,7 +89,7 @@ namespace winrt::Maple_App::implementation
                     continue;
                 }
                 auto ext = getNormalizedExtentionFromPath(file.Path());
-                if (ext != ".json" && ext != ".conf" && ext != ".mmdb" && ext != ".dat") {
+                if (ext != ".json" && ext != ".conf" && ext != ".mmdb" && ext != ".dat" && ext != ".cer" && ext != ".crt") {
                     continue;
                 }
                 const auto& newFile = co_await file.CopyAsync(targetDir, file.Name(), NameCollisionOption::GenerateUniqueName);
