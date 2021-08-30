@@ -169,6 +169,7 @@
   <ItemGroup>
     <None Include="PropertySheet.props" />
     <None Include="packages.config" />
+    <None Include="Maple.App_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="EditPage.xaml" />
