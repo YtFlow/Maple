@@ -58,10 +58,7 @@ namespace winrt::Maple_App::implementation
         // Allocate a 15 KB buffer to start with.
         outBufLen = WORKING_BUFFER_SIZE;
         std::array<WCHAR, ADDR_BUFFER_SIZE> addrBuf{};
-        auto sniffed = Netif::SniffOutboundAddress();
-        if (sniffed == L"192.168.3.1") {
-            sniffed = {};
-        }
+        auto sniffed = Netif::SniffBestInterface();
 
         do {
 
@@ -116,7 +113,10 @@ namespace winrt::Maple_App::implementation
                         bufSize--;
                     }
                     hstring addr(addrBuf.data(), bufSize);
-                    hstring desc = addr == sniffed ? L"★" : L"";
+                    hstring desc{ L"" };
+                    if (friendlyName != L"Maple" && std::make_optional(pCurrAddresses->IfIndex) == sniffed) {
+                        desc = L"★";
+                    }
                     desc = desc + friendlyName + L" (" + addr + L")";
                     ret.emplace_back(winrt::make<Netif>(desc, addr));
                     pUnicast = pUnicast->Next;
@@ -130,38 +130,19 @@ namespace winrt::Maple_App::implementation
         return ret;
     }
 
-    hstring Netif::SniffOutboundAddress()
+    std::optional<DWORD> Netif::SniffBestInterface()
     {
-        const auto s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-        if (s == INVALID_SOCKET) {
-            return {};
-        }
-
         sockaddr saddr{};
         saddr.sa_family = AF_INET;
+        saddr.sa_data[0] = 0;
         saddr.sa_data[1] = 53;
         memset(&saddr.sa_data[2], 8, 4);
 
-        if (connect(s, &saddr, sizeof(saddr)) == SOCKET_ERROR) {
-            return {};
+        DWORD bestIfInd;
+        if (FAILED(GetBestInterfaceEx(&saddr, &bestIfInd))) {
+            return std::nullopt;
         }
-
-        sockaddr_storage localAddr{};
-        int localAddrLen = sizeof(localAddr);
-
-        getsockname(s, (sockaddr*)&localAddr, &localAddrLen);
-        localAddr.__ss_pad1[0] = 0;
-        localAddr.__ss_pad1[1] = 0;
-
-        std::array<WCHAR, ADDR_BUFFER_SIZE> addrBuf{};
-        auto bufSize = static_cast<DWORD>(addrBuf.size());
-        if (FAILED(WSAAddressToStringW((LPSOCKADDR)&localAddr, localAddrLen, nullptr, addrBuf.data(), &bufSize))) {
-            return {};
-        }
-        if (bufSize > 0) {
-            bufSize--;
-        }
-        return hstring(addrBuf.data(), bufSize);
+        return { bestIfInd };
     }
 
 }

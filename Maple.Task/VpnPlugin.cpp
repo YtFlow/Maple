@@ -81,11 +81,12 @@ namespace winrt::Maple_Task::implementation
         const auto& configFolderPath = appData.LocalFolder().CreateFolderAsync(L"config", CreationCollisionOption::OpenIfExists).get().Path();
         const auto& localProperties = appData.LocalSettings().Values();
         const auto& outNetif = localProperties.TryLookup(NETIF_SETTING_KEY).try_as<hstring>().value_or(L"");
+        const auto& cacheDir = appData.LocalCacheFolder().Path();
         if (
             !SetEnvironmentVariable(L"ASSET_LOCATION", configFolderPath.data())
             || !SetEnvironmentVariable(L"LOG_NO_COLOR", L"true")
-            || !SetEnvironmentVariable(L"ENABLE_IPV6", L"true")
             || !SetEnvironmentVariable(L"OUTBOUND_INTERFACE", outNetif.data())
+            || !SetEnvironmentVariable(L"CACHE_LOCATION", cacheDir.data())
             ) {
             channel.TerminateConnection(L"Failed to set environment variables: " + winrt::to_hstring((uint32_t)GetLastError()));
             return;

@@ -13,7 +13,7 @@ namespace winrt::Maple_App::implementation
         hstring Addr();
 
         static std::vector<Maple_App::Netif> EnumerateInterfaces();
-        static hstring SniffOutboundAddress();
+        static std::optional<DWORD> SniffBestInterface();
 
     private:
         hstring m_desc;
