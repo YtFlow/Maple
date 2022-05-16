@@ -3,15 +3,20 @@
 #include "MainPage.g.h"
 #include "Model/ConfigViewModel.h"
 
+#include <winrt/Windows.Networking.Vpn.h>
+
 using namespace winrt;
+using namespace Windows::ApplicationModel::Core;
 using namespace Windows::ApplicationModel::DataTransfer;
 using namespace Windows::Foundation;
 using namespace Windows::Foundation::Collections;
+using namespace Windows::Networking::Vpn;
 using namespace Windows::Storage;
 using namespace Windows::UI::Core;
 using namespace Windows::UI::Xaml;
 using namespace Windows::UI::Xaml::Controls;
 using namespace Windows::UI::Xaml::Input;
+using namespace Windows::UI::Xaml::Navigation;
 
 namespace winrt::Maple_App::implementation
 {
@@ -29,6 +34,8 @@ namespace winrt::Maple_App::implementation
         IObservableVector<Maple_App::ConfigViewModel> ConfigItems();
 
         void Page_Loaded(IInspectable const& sender, RoutedEventArgs const& e);
+        void CoreTitleBar_LayoutMetricsChanged(CoreApplicationViewTitleBar const& sender, IInspectable const& args);
+        void CoreWindow_Activated(IInspectable const& sender, WindowActivatedEventArgs const& args);
         void ConfigSetAsDefaultMenuItem_Click(IInspectable const& sender, RoutedEventArgs const& e);
         void ConfigRenameMenuItem_Click(IInspectable const& sender, RoutedEventArgs const& e);
         fire_and_forget ConfigDeleteMenuItem_Click(IInspectable const& sender, RoutedEventArgs const& e);
@@ -47,6 +54,7 @@ namespace winrt::Maple_App::implementation
         void WindowWidth_CurrentStateChanged(IInspectable const& sender, VisualStateChangedEventArgs const& e);
         void MainSplitView_PaneClosing(SplitView const& sender, SplitViewPaneClosingEventArgs const& args);
         fire_and_forget GenerateProfileButton_Click(IInspectable const& sender, RoutedEventArgs const& e);
+        fire_and_forget ConnectionToggleSwitch_Toggled(IInspectable const& sender, RoutedEventArgs const& e);
 
     private:
         inline static DependencyProperty m_configItemsProperty =
@@ -64,9 +72,11 @@ namespace winrt::Maple_App::implementation
                 nullptr
             );
         inline static SystemNavigationManager NavigationManager{ nullptr };
+        inline static VpnManagementAgent VpnMgmtAgent{};
 
         IStorageFolder m_configFolder{ nullptr };
         Maple_App::ConfigViewModel m_defaultConfig{ nullptr };
+        VpnPlugInProfile m_vpnProfile{ nullptr };
 
         static IAsyncAction NotifyUser(const hstring& message);
         static IAsyncOperation<IStorageFolder> InitializeConfigFolder();
@@ -77,6 +87,7 @@ namespace winrt::Maple_App::implementation
         void SetAsDefault(const Maple_App::ConfigViewModel& item);
         fire_and_forget ConfirmRename();
         IAsyncAction LoadConfigs();
+        fire_and_forget StartConnectionCheck();
 
         template<ConvertableToIStorageItem T>
         IAsyncAction ImportFiles(const IVectorView<T>& items) {

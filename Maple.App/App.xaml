@@ -2,8 +2,7 @@
     x:Class="Maple_App.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Maple_App"
-    RequestedTheme="Light">
+    xmlns:local="using:Maple_App">
     <Application.Resources>
         <ResourceDictionary>
             <Color x:Key="SystemAccentColor">#2ebe5a</Color>

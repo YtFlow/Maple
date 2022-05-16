@@ -2,13 +2,18 @@
 #include "MainPage.h"
 #include "MainPage.g.cpp"
 #include <filesystem>
-#include <winrt/Windows.Networking.Vpn.h>
+#include <winrt/Windows.ApplicationModel.Core.h>
 #include <winrt/Windows.UI.ViewManagement.h>
+#include <winrt/Windows.UI.Xaml.Media.h>
 #include "Model\Netif.h"
 
 namespace winrt::Maple_App::implementation
 {
+    using namespace std::chrono_literals;
+
     using namespace winrt::Windows::UI::ViewManagement;
+    using namespace winrt::Windows::UI::Xaml;
+    using namespace winrt::Windows::UI::Xaml::Media;
 
     std::string getNormalizedExtentionFromPath(const winrt::hstring& path) {
         auto ext = std::filesystem::path(std::wstring_view(path)).extension().string();
@@ -21,6 +26,34 @@ namespace winrt::Maple_App::implementation
     MainPage::MainPage()
     {
         InitializeComponent();
+
+        const auto coreTitleBar{ CoreApplication::GetCurrentView().TitleBar() };
+        const auto window{ Window::Current() };
+        coreTitleBar.ExtendViewIntoTitleBar(true);
+        window.SetTitleBar(CustomTitleBar());
+
+        coreTitleBar.LayoutMetricsChanged({ this,&MainPage::CoreTitleBar_LayoutMetricsChanged });
+        window.Activated({ this, &MainPage::CoreWindow_Activated });
+    }
+
+    void MainPage::CoreTitleBar_LayoutMetricsChanged(CoreApplicationViewTitleBar const& coreTitleBar, IInspectable const&)
+    {
+        LeftPaddingColumn().Width(GridLength{ .Value = coreTitleBar.SystemOverlayLeftInset(), .GridUnitType = GridUnitType::Pixel });
+        RightPaddingColumn().Width(GridLength{ .Value = coreTitleBar.SystemOverlayRightInset(), .GridUnitType = GridUnitType::Pixel });
+    }
+    void MainPage::CoreWindow_Activated(IInspectable const&, WindowActivatedEventArgs const& args)
+    {
+        UISettings settings{};
+        if (args.WindowActivationState() == CoreWindowActivationState::Deactivated)
+        {
+            AppTitleTextBlock().Foreground(
+                SolidColorBrush{ settings.UIElementColor(UIElementType::GrayText) });
+        }
+        else
+        {
+            AppTitleTextBlock().Foreground(
+                SolidColorBrush{ settings.GetColorValue(UIColorType::Foreground) });
+        }
     }
 
     DependencyProperty MainPage::ConfigItemsProperty()
@@ -50,6 +83,8 @@ namespace winrt::Maple_App::implementation
                 }
             }
             });
+
+        StartConnectionCheck();
     }
 
     IAsyncAction MainPage::NotifyUser(const hstring& message) {
@@ -276,7 +311,7 @@ namespace winrt::Maple_App::implementation
             boxed_netifs.reserve(netifs.size());
             std::transform(netifs.begin(), netifs.end(), std::back_inserter(boxed_netifs), [](const auto& netif) -> auto {
                 return netif;
-            });
+                });
             NetifCombobox().ItemsSource(single_threaded_vector(std::move(boxed_netifs)));
 
             const auto& currentNetif = ApplicationData::Current().LocalSettings().Values().TryLookup(NETIF_SETTING_KEY).try_as<hstring>();
@@ -380,8 +415,6 @@ namespace winrt::Maple_App::implementation
     fire_and_forget MainPage::GenerateProfileButton_Click(IInspectable const& sender, RoutedEventArgs const& e)
     {
         const auto lifetime = get_strong();
-        using namespace winrt::Windows::Networking::Vpn;
-        const auto& agent = VpnManagementAgent{};
         const auto& profile = VpnPlugInProfile{};
         profile.AlwaysOn(false);
         profile.ProfileName(L"Maple");
@@ -389,7 +422,7 @@ namespace winrt::Maple_App::implementation
         profile.VpnPluginPackageFamilyName(Windows::ApplicationModel::Package::Current().Id().FamilyName());
         profile.RememberCredentials(false);
         profile.ServerUris().Append(Uri{ L"https://github.com/YtFlow/Maple" });
-        const auto& result = co_await agent.AddProfileFromObjectAsync(profile);
+        const auto& result = co_await VpnMgmtAgent.AddProfileFromObjectAsync(profile);
         if (result == VpnManagementErrorStatus::Ok) {
             co_await NotifyUser(L"Profile generated.");
         }
@@ -397,5 +430,72 @@ namespace winrt::Maple_App::implementation
             co_await NotifyUser(L"Failed to generate a profile (" + to_hstring(static_cast<int32_t>(result)) + L").");
         }
     }
-}
 
+    fire_and_forget MainPage::ConnectionToggleSwitch_Toggled(IInspectable const&, RoutedEventArgs const&)
+    {
+        const auto lifetime{ get_strong() };
+
+        if (!ApplicationData::Current().LocalSettings().Values().HasKey(NETIF_SETTING_KEY)) {
+            MainPivot().SelectedIndex(1);
+            co_await 400ms;
+            co_await resume_foreground(Dispatcher());
+            NetifCombobox().IsDropDownOpen(true);
+            co_return;
+        }
+
+        const auto connect = ConnectionToggleSwitch().IsOn();
+        ConnectionToggleSwitch().IsEnabled(false);
+        VpnManagementErrorStatus status = VpnManagementErrorStatus::Ok;
+        if (connect) {
+            status = co_await VpnMgmtAgent.ConnectProfileAsync(m_vpnProfile);
+        }
+        else {
+            status = co_await VpnMgmtAgent.DisconnectProfileAsync(m_vpnProfile);
+        }
+        if (status == VpnManagementErrorStatus::Ok)
+        {
+            ConnectionToggleSwitch().IsEnabled(true);
+        }
+        else {
+            NotifyUser(L"Could not perform the requested operation. Please try again from system VPN settings for detailed error messages.");
+        }
+    }
+    fire_and_forget MainPage::StartConnectionCheck()
+    {
+        const auto lifetime{ get_strong() };
+        IVectorView<IVpnProfile> profiles{ nullptr };
+
+        auto event_token{ ConnectionToggleSwitch().Toggled({ this, &MainPage::ConnectionToggleSwitch_Toggled }) };
+        while (true) {
+            if (m_vpnProfile == nullptr) {
+                profiles = co_await VpnMgmtAgent.GetProfilesAsync();
+                for (auto const p : profiles) {
+                    if (p.ProfileName() == L"Maple" || p.ProfileName() == L"maple") {
+                        m_vpnProfile = p.try_as<VpnPlugInProfile>();
+                        break;
+                    }
+                }
+            }
+            if (m_vpnProfile == nullptr) {
+                ConnectionToggleSwitch().IsEnabled(false);
+            }
+            else {
+                ToolTipService::SetToolTip(ConnectionToggleSwitchContainer(), nullptr);
+                auto status = VpnManagementConnectionStatus::Disconnected;
+                try {
+                    status = m_vpnProfile.ConnectionStatus();
+                }
+                catch (...) {}
+
+                ConnectionToggleSwitch().IsEnabled(status == VpnManagementConnectionStatus::Connected
+                    || status == VpnManagementConnectionStatus::Disconnected);
+                ConnectionToggleSwitch().Toggled(event_token);
+                ConnectionToggleSwitch().IsOn(status == VpnManagementConnectionStatus::Connected
+                    || status == VpnManagementConnectionStatus::Connecting);
+                event_token = ConnectionToggleSwitch().Toggled({ this, &MainPage::ConnectionToggleSwitch_Toggled });
+            }
+            co_await 1s;
+            co_await resume_foreground(Dispatcher());
+        }
+    }
+}

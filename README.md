@@ -5,9 +5,9 @@ A lightweight Universal Windows proxy app based on https://github.com/eycorsican
 
 - Comes with Leaf core:
    - Domain name resolution with built-in DNS processor
-   - `tun`/`http`/`socks`/`trojan`/`ws` chainable inbounds
+   - `tun`/`shadowsocks`/`socks`/`trojan`/`ws` chainable inbounds
    - `direct`/`drop`/`tls`/`ws`/`h2`/`shadowsocks`/`vmess`/`trojan`/`socks` chainable outbounds
-   - `failover`/`tryall`/`random`/`retry` composed outbounds
+   - `failover`/`tryall`/`static` composed outbounds
    - `amux` multiplexing
    - Rule system based on IP, GeoIP and domain name
    - External rules from GeoIP database and V2Ray [Domain List Community](https://github.com/v2fly/domain-list-community)
@@ -37,7 +37,7 @@ Maple as a UWP app is distributed for sideloading only. When installed, it acts 
 1. Launch Maple from the Start menu.
 2. Edit configuration. Refer to https://github.com/eycorsican/leaf/blob/master/README.zh.md for further explanation.
 3. Save the configuration file.
-4. If any `EXTERNAL` or `GEOIP` directive is used, drag external database files into `Config` area. V2Ray Domain List Community database can be fetched at https://github.com/v2ray/domain-list-community/releases/latest/download/dlc.dat . For GeoIP database, see [this script](https://github.com/eycorsican/ileaf/blob/main/misc/download_data.sh#L10) for inspiration.
+4. If any `EXTERNAL` or `GEOIP` directive is used, drag external database files into `Config` area. V2Ray Domain List Community database can be fetched at https://github.com/v2ray/domain-list-community/releases/latest/download/dlc.dat . For GeoIP database, please go to [MaxMind Developer Portal](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) and sign up for free download.
 5. Rename these databases accordingly (if applicable). By default, GeoIP database is `geo.mmdb` and V2Ray Domain List Community database is `site.dat`.
 6. Go to Setting page in Maple. Choose your network adapter such as `Ethernet` or `WLAN`.
 7. Launch [Windows Settings](	ms-settings:network-vpn) app.
@@ -50,29 +50,31 @@ Maple as a UWP app is distributed for sideloading only. When installed, it acts 
 
 ### Connect
 
-1. Launch [Windows Settings](	ms-settings:network-vpn) app.
-2. In the VPN Settings, select **Maple**, and then Connect.  
+- Simply click the toggle button on the title bar, or
+- In Windows 11, select the battery, network, or volume icon to open the Quick Settings panel. Find **Maple** in VPN panel and connect, or
+- In Windows 10, select the Network  icon on the taskbar, and click Maple. In [Windows Settings](	ms-settings:network-vpn) app, select **Maple**, and then Connect.  
+
 *Note: Modifying the current configuration file while VPN is connected will take effect immediately.*
-3. Select Disconnect to disconnect.
 
 ## TODO
 
-- VPN lifecycle management on Maple UI
+- <del>VPN lifecycle management on Maple UI</del>
 - Better editing experience
 - Log collection (currently logs are sent to Visual Studio Output window for debugging only)
 - <del>`external` entries</del>
 - VPN On Demand
 - Configurable routing entries
+- IPv6 support
 
 ## Build
 
-To build Leaf and Maple, a Rust `nightly-x86_64-pc-windows-msvc` toolchain, Windows 10 SDK 10.0.19041 and Visual Studio 2019 with C++ Development Workflow are required. [C++/WinRT Visual Studio extension](https://marketplace.visualstudio.com/items?itemName=CppWinRTTeam.cppwinrt101804264) must be installed to generate Windows Metadata.
+To build Leaf and Maple, a Rust `nightly-x86_64-pc-windows-msvc` toolchain, Windows 10 SDK 10.0.22000 and Visual Studio 2022 with C++ Development Workflow are required. [C++/WinRT Visual Studio extension](https://marketplace.visualstudio.com/items?itemName=CppWinRTTeam.cppwinrt101804264) must be installed to generate Windows Metadata.
 
 1. **Recursively** clone this repository.
 2. Open a PowerShell Prompt.
-3. Change working directory to `leaf/leaf-ffi`.
-4. `cargo build -Z build-std=std,panic_abort --target x86_64-uwp-windows-msvc`.  
-   For Release builds, use `cargo build -Z build-std=std,panic_abort --target x86_64-uwp-windows-msvc --release`.  
+3. Change working directory to `leaf`.
+4. `cargo build -p leaf-ffi -Z build-std=std,panic_abort --target x86_64-uwp-windows-msvc`.  
+   For Release builds, use `cargo build -p leaf-ffi -Z build-std=std,panic_abort --target x86_64-uwp-windows-msvc --release`.  
    See also https://github.com/eycorsican/leaf#build .
 5. Open `Maple.sln` in Visual Studio.
 6. Build Solution.

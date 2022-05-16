@@ -17,176 +17,222 @@
         <pickers:FileOpenPicker x:Key="ImportFilePicker" x:Name="ImportFilePicker"/>
     </Page.Resources>
 
-    <SplitView x:Name="MainSplitView" DisplayMode="Overlay" PaneClosing="MainSplitView_PaneClosing">
-        <SplitView.Pane>
-            <Pivot PivotItemLoaded="MainPivot_PivotItemLoaded">
-                <PivotItem Header="Config" Margin="0">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <ListView
-                            x:Name="ConfigListView"
-                            Grid.Row="0"
-                            SelectionMode="Single"
-                            CanDragItems="True"
-                            AllowDrop="True"
-                            ItemsSource="{x:Bind ConfigItems, Mode=OneWay}"
-                            SelectionChanged="ConfigListView_SelectionChanged"
-                            DragItemsStarting="ConfigListView_DragItemsStarting"
-                            DragOver="ConfigListView_DragOver"
-                            Drop="ConfigListView_Drop">
-                            <ListView.ItemContainerStyle>
-                                <Style TargetType="ListViewItem">
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                </Style>
-                            </ListView.ItemContainerStyle>
-                            <ListView.Resources>
-                                <MenuFlyout x:Key="ItemContextFlyout">
-                                    <MenuFlyoutItem Icon="Favorite" Text="Set as Default" Click="ConfigSetAsDefaultMenuItem_Click"/>
-                                    <MenuFlyoutItem Icon="Copy" Text="Duplicate" Click="ConfigDuplicateMenuItem_Click"/>
-                                    <MenuFlyoutItem Icon="Rename" Text="Rename" Click="ConfigRenameMenuItem_Click">
-                                        <Windows10FallCreatorsUpdate:MenuFlyoutItem.KeyboardAccelerators>
-                                            <Windows10FallCreatorsUpdate:KeyboardAccelerator Key="F2" ScopeOwner="{x:Bind ConfigListView}"/>
-                                        </Windows10FallCreatorsUpdate:MenuFlyoutItem.KeyboardAccelerators>
-                                    </MenuFlyoutItem>
-                                    <MenuFlyoutItem Icon="Delete" Text="Delete" Click="ConfigDeleteMenuItem_Click">
-                                        <MenuFlyoutItem.Command>
-                                            <Windows10version1809:StandardUICommand Kind="Delete"/>
-                                        </MenuFlyoutItem.Command>
-                                    </MenuFlyoutItem>
-                                </MenuFlyout>
-                            </ListView.Resources>
-                            <ListView.ItemTemplate>
-                                <DataTemplate x:DataType="maple_app:ConfigViewModel">
-                                    <Grid
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch"
-                                        ContextFlyout="{StaticResource ItemContextFlyout}"
-                                        DoubleTapped="ConfigItem_DoubleTapped">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="0"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Rectangle
-                                            Grid.Row="0"
-                                            Grid.RowSpan="2"
-                                            Grid.Column="0"
-                                            Margin="-12, 6, 4, 6"
-                                            Fill="{ThemeResource SystemAccentColor}"
-                                            Visibility="{x:Bind IsDefault, Mode=OneWay}"/>
-                                        <TextBlock
-                                            Grid.Row="0"
-                                            Grid.Column="1"
-                                            Text="{x:Bind Name, Mode=OneWay}"/>
-                                        <TextBlock
-                                            Grid.Row="1"
-                                            Grid.Column="1"
-                                            Text="{x:Bind DateUpdated, Mode=OneWay, Converter={StaticResource DateTimeConverter}}"
-                                            Style="{ThemeResource CaptionTextBlockStyle}"
-                                            Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
-                        <CommandBar Grid.Row="1">
-                            <AppBarButton Icon="Add" Label="Add">
-                                <AppBarButton.Flyout>
-                                    <MenuFlyout Placement="Top">
-                                        <MenuFlyoutItem Text="Conf" Click="ConfigCreateMenuItem_Click"/>
-                                        <MenuFlyoutItem Text="JSON" Click="ConfigCreateMenuItem_Click"/>
-                                        <MenuFlyoutSeparator/>
-                                        <MenuFlyoutItem Text="Import…" Click="ConfigImportMenuItem_Click"/>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="LeftPaddingColumn" Width="0"/>
+            <ColumnDefinition />
+            <ColumnDefinition x:Name="RightPaddingColumn" Width="0"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="1" x:Name="CustomTitleBar" Height="32" Background="Transparent">
+            <TextBlock
+                x:Name="AppTitleTextBlock"
+                Text="Maple"
+                VerticalAlignment="Center"
+                FontSize="13"
+                Margin="12, 0, 0, 0"/>
+        </Grid>
+        <Grid
+            x:Name="ConnectionToggleSwitchContainer"
+            Grid.Column="1"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Center"
+            Background="Transparent">
+            <ToolTipService.ToolTip>
+                <ToolTip x:Name="NoProfileToggleTooltip">
+                    Maple VPN profile is not ready. Please check Setting page for more information.
+                </ToolTip>
+            </ToolTipService.ToolTip>
+            <ToggleSwitch x:Name="ConnectionToggleSwitch" IsEnabled="False">
+                <ToggleSwitch.RenderTransform>
+                    <CompositeTransform ScaleX=".8" ScaleY=".8" TranslateX="90" TranslateY="3" />
+                </ToggleSwitch.RenderTransform>
+            </ToggleSwitch>
+        </Grid>
+
+        <SplitView
+            x:Name="MainSplitView"
+            RequestedTheme="Light"
+            Grid.Row="1"
+            Grid.ColumnSpan="3"
+            DisplayMode="Overlay"
+            PaneClosing="MainSplitView_PaneClosing"
+            Background="White" >
+            <SplitView.Pane>
+                <Pivot x:Name="MainPivot" PivotItemLoaded="MainPivot_PivotItemLoaded">
+                    <PivotItem Header="Config" Margin="0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <ListView
+                                x:Name="ConfigListView"
+                                Grid.Row="0"
+                                SelectionMode="Single"
+                                CanDragItems="True"
+                                AllowDrop="True"
+                                ItemsSource="{x:Bind ConfigItems, Mode=OneWay}"
+                                SelectionChanged="ConfigListView_SelectionChanged"
+                                DragItemsStarting="ConfigListView_DragItemsStarting"
+                                DragOver="ConfigListView_DragOver"
+                                Drop="ConfigListView_Drop">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.Resources>
+                                    <MenuFlyout x:Key="ItemContextFlyout">
+                                        <MenuFlyoutItem Icon="Favorite" Text="Set as Default" Click="ConfigSetAsDefaultMenuItem_Click"/>
+                                        <MenuFlyoutItem Icon="Copy" Text="Duplicate" Click="ConfigDuplicateMenuItem_Click"/>
+                                        <MenuFlyoutItem Icon="Rename" Text="Rename" Click="ConfigRenameMenuItem_Click">
+                                            <Windows10FallCreatorsUpdate:MenuFlyoutItem.KeyboardAccelerators>
+                                                <Windows10FallCreatorsUpdate:KeyboardAccelerator Key="F2" ScopeOwner="{x:Bind ConfigListView}"/>
+                                            </Windows10FallCreatorsUpdate:MenuFlyoutItem.KeyboardAccelerators>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutItem Icon="Delete" Text="Delete" Click="ConfigDeleteMenuItem_Click">
+                                            <MenuFlyoutItem.Command>
+                                                <Windows10version1809:StandardUICommand Kind="Delete"/>
+                                            </MenuFlyoutItem.Command>
+                                        </MenuFlyoutItem>
                                     </MenuFlyout>
-                                </AppBarButton.Flyout>
-                            </AppBarButton>
-                        </CommandBar>
-                        <ContentDialog
-                            x:Name="RenameDialog"
-                            Height="10"
-                            Title="Specify a new file name"
-                            PrimaryButtonText="Rename"
-                            SecondaryButtonText="Close"
-                            PrimaryButtonClick="RenameDialogPrimaryButton_Click">
-                            <ContentDialog.SecondaryButtonCommand>
-                                <Windows10version1809:StandardUICommand Kind="Close"/>
-                            </ContentDialog.SecondaryButtonCommand>
-                            <TextBox
-                                x:Name="RenameDialogText"
-                                MaxLength="100"
-                                Height="32"
-                                AcceptsReturn="False"
-                                TextWrapping="NoWrap"
-                                KeyDown="RenameDialogText_KeyDown"/>
-                        </ContentDialog>
-                    </Grid>
-                </PivotItem>
-                <PivotItem Header="Setting">
-                    <ScrollViewer>
-                        <StackPanel>
-                            <TextBlock Margin="0, 18" Text="Network Interface" Style="{ThemeResource TitleTextBlockStyle}"/>
-                            <TextBlock
-                                Text="Choose a default network interface for DNS and outbound connections"
-                                TextWrapping="WrapWholeWords"/>
-                            <ComboBox
-                                x:Name="NetifCombobox"
-                                HorizontalAlignment="Stretch"
-                                Margin="0, 8"
-                                DisplayMemberPath="Desc"
-                                SelectedValuePath="Addr"
-                                SelectionChanged="NetifCombobox_SelectionChanged"/>
+                                </ListView.Resources>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="maple_app:ConfigViewModel">
+                                        <Grid
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch"
+                                            ContextFlyout="{StaticResource ItemContextFlyout}"
+                                            DoubleTapped="ConfigItem_DoubleTapped">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="0"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Rectangle
+                                                Grid.Row="0"
+                                                Grid.RowSpan="2"
+                                                Grid.Column="0"
+                                                Margin="-12, 6, 4, 6"
+                                                Fill="{ThemeResource SystemAccentColor}"
+                                                Visibility="{x:Bind IsDefault, Mode=OneWay}"/>
+                                            <TextBlock
+                                                Grid.Row="0"
+                                                Grid.Column="1"
+                                                Text="{x:Bind Name, Mode=OneWay}"/>
+                                            <TextBlock
+                                                Grid.Row="1"
+                                                Grid.Column="1"
+                                                Text="{x:Bind DateUpdated, Mode=OneWay, Converter={StaticResource DateTimeConverter}}"
+                                                Style="{ThemeResource CaptionTextBlockStyle}"
+                                                Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                            <CommandBar Grid.Row="1">
+                                <AppBarButton Icon="Add" Label="Add">
+                                    <AppBarButton.Flyout>
+                                        <MenuFlyout Placement="Top">
+                                            <MenuFlyoutItem Text="Conf" Click="ConfigCreateMenuItem_Click"/>
+                                            <MenuFlyoutItem Text="JSON" Click="ConfigCreateMenuItem_Click"/>
+                                            <MenuFlyoutSeparator/>
+                                            <MenuFlyoutItem Text="Import…" Click="ConfigImportMenuItem_Click"/>
+                                        </MenuFlyout>
+                                    </AppBarButton.Flyout>
+                                </AppBarButton>
+                            </CommandBar>
+                            <ContentDialog
+                                x:Name="RenameDialog"
+                                Height="10"
+                                Title="Specify a new file name"
+                                PrimaryButtonText="Rename"
+                                SecondaryButtonText="Close"
+                                PrimaryButtonClick="RenameDialogPrimaryButton_Click">
+                                <ContentDialog.SecondaryButtonCommand>
+                                    <Windows10version1809:StandardUICommand Kind="Close"/>
+                                </ContentDialog.SecondaryButtonCommand>
+                                <TextBox
+                                    x:Name="RenameDialogText"
+                                    MaxLength="100"
+                                    Height="32"
+                                    AcceptsReturn="False"
+                                    TextWrapping="NoWrap"
+                                    KeyDown="RenameDialogText_KeyDown"/>
+                            </ContentDialog>
+                        </Grid>
+                    </PivotItem>
+                    <PivotItem Header="Setting">
+                        <ScrollViewer>
+                            <StackPanel>
+                                <TextBlock Margin="0, 18" Text="Network Interface" Style="{ThemeResource TitleTextBlockStyle}"/>
+                                <TextBlock
+                                    Text="Choose a default network interface for DNS and outbound connections"
+                                    TextWrapping="WrapWholeWords"/>
+                                <ComboBox
+                                    x:Name="NetifCombobox"
+                                    HorizontalAlignment="Stretch"
+                                    Margin="0, 8"
+                                    DisplayMemberPath="Desc"
+                                    SelectedValuePath="Addr"
+                                    SelectionChanged="NetifCombobox_SelectionChanged"/>
 
-                            <TextBlock Margin="0, 18" Text="VPN Connection" Style="{ThemeResource TitleTextBlockStyle}"/>
-                            <TextBlock Margin="0, 0, 0, 18" TextWrapping="WrapWholeWords">
-                                <Run Text="Connect to Maple in the"/>
-                                <Hyperlink TextDecorations="None" NavigateUri="ms-settings:network-vpn">
-                                    <Run Text="Windows Settings"/>
-                                </Hyperlink>
-                                <Run Text="app."/>
-                            </TextBlock>
-                            <TextBlock
-                                Margin="0, 0, 0, 8"
-                                Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}"
-                                TextWrapping="WrapWholeWords">
-                                <Run Text="For first time connection, create a VPN profile with provider"/>
-                                <Run FontFamily="Consolas" Text="Maple"/>
-                                <Run Text="and server name"/>
-                                <Run FontFamily="Consolas" Text="maple"/>
-                                <Run Text=". Alternatively, select &quot;Generate Profile&quot; to create one automatically."/>
-                            </TextBlock>
-                            <Button Content="Generate Profile" Click="GenerateProfileButton_Click"/>
+                                <TextBlock Margin="0, 18" Text="VPN Connection" Style="{ThemeResource TitleTextBlockStyle}"/>
+                                <TextBlock Margin="0, 0, 0, 18" TextWrapping="WrapWholeWords">
+                                    <Run Text="Connect to Maple in the"/>
+                                    <Hyperlink TextDecorations="None" NavigateUri="ms-settings:network-vpn">
+                                        <Run Text="Windows Settings"/>
+                                    </Hyperlink>
+                                    <Run Text="app."/>
+                                </TextBlock>
+                                <TextBlock
+                                    Margin="0, 0, 0, 8"
+                                    Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}"
+                                    TextWrapping="WrapWholeWords">
+                                    <Run Text="For first time connection, create a VPN profile with provider"/>
+                                    <Run FontFamily="Consolas" Text="Maple"/>
+                                    <Run Text="and server name"/>
+                                    <Run FontFamily="Consolas" Text="maple"/>
+                                    <Run Text=". Alternatively, select &quot;Generate Profile&quot; to create one automatically (not recommended)."/>
+                                </TextBlock>
+                                <Button Content="Generate Profile" Click="GenerateProfileButton_Click"/>
 
-                            <TextBlock Margin="0, 18" Text="About" Style="{ThemeResource TitleTextBlockStyle}"/>
-                            <HyperlinkButton Padding="0" Content="Homepage" NavigateUri="https://github.com/YtFlow/Maple"/>
-                            <HyperlinkButton Padding="0" Content="Report Issues" NavigateUri="https://github.com/YtFlow/Maple/issues"/>
-                            <HyperlinkButton Padding="0" Content="License" NavigateUri="https://github.com/YtFlow/Maple/blob/main/LICENSE"/>
+                                <TextBlock Margin="0, 18" Text="About" Style="{ThemeResource TitleTextBlockStyle}"/>
+                                <HyperlinkButton Padding="0" Content="Homepage" NavigateUri="https://github.com/YtFlow/Maple"/>
+                                <HyperlinkButton Padding="0" Content="Report Issues" NavigateUri="https://github.com/YtFlow/Maple/issues"/>
+                                <HyperlinkButton Padding="0" Content="License" NavigateUri="https://github.com/YtFlow/Maple/blob/main/LICENSE"/>
 
-                            <TextBlock Margin="0, 20, 0, 0" TextWrapping="WrapWholeWords">
-                                <Run>This product contains a</Run>
-                                <Hyperlink NavigateUri="https://github.com/YtFlow/leaf" TextDecorations="None">
-                                    <Run>modified version</Run>
-                                </Hyperlink>
-                                <Run>of</Run>
-                                <Hyperlink NavigateUri="https://github.com/eycorsican/leaf" TextDecorations="None">
-                                    <Run>eycorsican/leaf</Run>
-                                </Hyperlink>
-                                <Run>under</Run>
-                                <Hyperlink NavigateUri="https://github.com/eycorsican/leaf/blob/master/LICENSE" TextDecorations="None">
-                                    <Run>Apache License 2.0</Run>
-                                </Hyperlink>
-                                <Run>.</Run>
-                            </TextBlock>
-                        </StackPanel>
-                    </ScrollViewer>
-                </PivotItem>
-            </Pivot>
-        </SplitView.Pane>
-        <Frame x:Name="MainContentFrame" CacheSize="0"/>
+                                <TextBlock Margin="0, 20, 0, 0" TextWrapping="WrapWholeWords">
+                                    <Run>This product contains a</Run>
+                                    <Hyperlink NavigateUri="https://github.com/YtFlow/leaf" TextDecorations="None">
+                                        <Run>modified version</Run>
+                                    </Hyperlink>
+                                    <Run>of</Run>
+                                    <Hyperlink NavigateUri="https://github.com/eycorsican/leaf" TextDecorations="None">
+                                        <Run>eycorsican/leaf</Run>
+                                    </Hyperlink>
+                                    <Run>under</Run>
+                                    <Hyperlink NavigateUri="https://github.com/eycorsican/leaf/blob/master/LICENSE" TextDecorations="None">
+                                        <Run>Apache License 2.0</Run>
+                                    </Hyperlink>
+                                    <Run>.</Run>
+                                </TextBlock>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </PivotItem>
+                </Pivot>
+            </SplitView.Pane>
+            <Frame x:Name="MainContentFrame" CacheSize="0" />
+        </SplitView>
+
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup CurrentStateChanged="WindowWidth_CurrentStateChanged">
                 <VisualState>
@@ -200,5 +246,5 @@
                 </VisualState>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
-    </SplitView>
+    </Grid>
 </Page>
