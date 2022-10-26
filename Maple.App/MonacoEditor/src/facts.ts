@@ -59,3 +59,4 @@ export const GENERAL_SETTING_KEYS: IGeneralSettingDef[] = [
 export const GENERAL_SETTINGS_KEYS_SET = new Set(GENERAL_SETTING_KEYS.map(k => k.name))
 
 export const LOG_LEVELS = ['trace', 'debug', 'info', 'warn', 'error']
+export const LOG_LEVELS_SET = new Set(LOG_LEVELS)

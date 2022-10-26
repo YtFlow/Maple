@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/YtFlow/Maple#readme",
   "devDependencies": {
+    "ipaddr.js": "^2.0.1",
     "monaco-editor": "^0.32.1",
     "parcel": "^2.7.0"
   },

@@ -12,13 +12,15 @@ export interface ILeafConfStruct {
     sections: ILeafConfSection[]
 }
 
-export interface ILeafConfGeneralItem {
+export interface ILeafConfKvItem {
     lineId: number,
     key: string,
     keyStartCol: number,
     value: string,
     valueStartCol: number,
 }
+
+export type ILeafConfTextSpan = { text: string, startCol: number }
 
 export function trimWithPos(s: string, startCol: number) {
     const matches = s.match(/^(\s*)([^\s].*)$/)
@@ -35,6 +37,21 @@ export function trimComment(s: string): string {
         return s
     }
     return s.slice(0, commentPos)
+}
+
+export function splitByComma(s: string, startCol: number): ILeafConfTextSpan[] {
+    const ret: ILeafConfTextSpan[] = []
+    let commaPos = s.indexOf(',')
+    while (commaPos !== -1) {
+        const trimmed = trimWithPos(s.slice(0, commaPos), startCol)
+        ret.push({ text: trimmed.trimmed, startCol: trimmed.startCol })
+        s = s.slice(commaPos + 1)
+        startCol += commaPos + 1
+        commaPos = s.indexOf(',')
+    }
+    const trimmed = trimWithPos(s, startCol)
+    ret.push({ text: trimmed.trimmed, startCol: trimmed.startCol })
+    return ret
 }
 
 export function parseStruct(model: monaco.editor.ITextModel): ILeafConfStruct {
@@ -66,8 +83,8 @@ export function parseStruct(model: monaco.editor.ITextModel): ILeafConfStruct {
         lastSection.endLine = lastSectionLastLineId
         ret.sections.push(lastSection)
         const trimmedSectionName = trimWithPos(
-            firstSectionHeaderMatch.matches?.[2] || '',
-            (firstSectionHeaderMatch.matches?.[1].length ?? 0) + 2,
+            sectionHeaderMatch.matches?.[2] || '',
+            (sectionHeaderMatch.matches?.[1].length ?? 0) + 2,
         )
         sectionName = trimmedSectionName.trimmed
         sectionNameStartCol = trimmedSectionName.startCol
@@ -92,7 +109,7 @@ export function findIndexOfSections(sections: ILeafConfSection[], lineId: number
     return sections.length - pos - 1
 }
 
-export function parseGeneralLine(s: string, lineId: number, startCol: number): ILeafConfGeneralItem | undefined {
+export function parseKvLine(s: string, lineId: number, startCol: number): ILeafConfKvItem | undefined {
     s = trimComment(s)
     const eqPos = s.indexOf('=')
     if (eqPos === -1) {
@@ -107,14 +124,14 @@ export function parseGeneralLine(s: string, lineId: number, startCol: number): I
 export function parseSectionGeneral(
     model: monaco.editor.ITextModel,
     struct: ILeafConfStruct,
-): ILeafConfGeneralItem[] {
-    let ret: ILeafConfGeneralItem[] = []
+): ILeafConfKvItem[] {
+    let ret: ILeafConfKvItem[] = []
     for (const lineId of struct.sections
         .filter(s => s.sectionName === SECTION_GENERAL)
         .flatMap(s => Array.from({ length: s.endLine - s.startLine }, (_, i) => i + s.startLine + 1))) {
 
         const line = model.getLineContent(lineId)
-        const item = parseGeneralLine(line, lineId, 1)
+        const item = parseKvLine(line, lineId, 1)
         if (item !== undefined) {
             ret.push(item)
         }
