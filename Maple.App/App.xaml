@@ -2,10 +2,23 @@
     x:Class="Maple_App.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Maple_App">
+    xmlns:local="using:Maple_App"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls">
     <Application.Resources>
-        <ResourceDictionary>
-            <Color x:Key="SystemAccentColor">#2ebe5a</Color>
-        </ResourceDictionary>
+        <controls:XamlControlsResources>
+            <controls:XamlControlsResources.MergedDictionaries>
+                <ResourceDictionary>
+                    <Color x:Key="SystemAccentColor">#2fc751</Color>
+                    <Color x:Key="SystemAccentColorLight1">#33cf5a</Color>
+                    <Color x:Key="SystemAccentColorLight2">#5fda87</Color>
+                    <Color x:Key="SystemAccentColorLight3">#8ed7bd</Color>
+                    <Color x:Key="SystemAccentColorDark1">#219349</Color>
+                    <Color x:Key="SystemAccentColorDark2">#135f3b</Color>
+                    <Color x:Key="SystemAccentColorDark3">#0c4432</Color>
+                </ResourceDictionary>
+            </controls:XamlControlsResources.MergedDictionaries>
+        </controls:XamlControlsResources>
+
+        <!--<Color x:Key="SystemAccentColor">#2ebe5a </Color>-->
     </Application.Resources>
 </Application>

@@ -168,8 +168,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="PropertySheet.props" />
-    <None Include="packages.config" />
     <None Include="Maple.App_TemporaryKey.pfx" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="EditPage.xaml" />
@@ -177,6 +177,7 @@
     <Page Include="MmdbPage.xaml" />
     <Page Include="DatPage.xaml" />
     <Page Include="CertPage.xaml" />
+    <Page Include="MonacoEditPage.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Assets">

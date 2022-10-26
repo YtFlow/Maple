@@ -1,0 +1,48 @@
+{
+  "name": "leaf-conf-editor",
+  "version": "0.1.0",
+  "description": "Leaf configuration file editor based on Monaco",
+  "source": "src/editor.html",
+  "browserlist": "chrome >= 86",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "parcel",
+    "build": "parcel build --target src/editor.html src/editor.html && parcel build --target json.worker.js node_modules/monaco-editor/esm/vs/language/json/json.worker.js && parcel build --target editor.worker.js node_modules/monaco-editor/esm/vs/editor/editor.worker.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YtFlow/Maple.git"
+  },
+  "author": "bdbai <bdbaiapp@163.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/YtFlow/Maple/issues"
+  },
+  "homepage": "https://github.com/YtFlow/Maple#readme",
+  "devDependencies": {
+    "monaco-editor": "^0.32.1",
+    "parcel": "^2.7.0"
+  },
+  "alias": {
+    "buffer": false,
+    "process": false
+  },
+  "targets": {
+    "src/editor.html": {
+      "publicUrl": "/MonacoEditor",
+      "distDir": "dist"
+    },
+    "json.worker.js": {
+      "context": "web-worker",
+      "distDir": "dist",
+      "publicUrl": "/MonacoEditor",
+      "sourceMap": false
+    },
+    "editor.worker.js": {
+      "context": "web-worker",
+      "distDir": "dist",
+      "publicUrl": "/MonacoEditor",
+      "sourceMap": false
+    }
+  }
+}

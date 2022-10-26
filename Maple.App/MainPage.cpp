@@ -222,7 +222,7 @@ namespace winrt::Maple_App::implementation
         }
 
         if (ConfigListView().SelectedItem() == item) {
-            ConfigListView().SelectedIndex(!ConfigListView().SelectedIndex());
+            ConfigListView().SelectedIndex(ConfigListView().SelectedIndex() == 0 ? 1 : 0);
         }
         configItems.RemoveAt(index);
         co_await item.Delete();
@@ -342,7 +342,7 @@ namespace winrt::Maple_App::implementation
     void MainPage::ConfigListView_SelectionChanged(IInspectable const&, SelectionChangedEventArgs const& e)
     {
         const auto& item = e.AddedItems().First().Current();
-        auto targetPage = xaml_typename<EditPage>();
+        auto targetPage = xaml_typename<MonacoEditPage>();
         const auto& config = item.try_as<Maple_App::ConfigViewModel>();
         if (config != nullptr) {
             const auto ext = getNormalizedExtentionFromPath(config.Name());
@@ -356,7 +356,10 @@ namespace winrt::Maple_App::implementation
                 targetPage = xaml_typename<CertPage>();
             }
         }
+        if (targetPage.Name != xaml_typename<MonacoEditPage>().Name)
+        {
         MainContentFrame().BackStack().Clear();
+        }
         MainContentFrame().Navigate(targetPage, item);
     }
 

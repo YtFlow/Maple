@@ -1,0 +1,8 @@
+namespace Maple_App
+{
+    [default_interface]
+    runtimeclass MonacoEditPage : Windows.UI.Xaml.Controls.Page
+    {
+        MonacoEditPage();
+    }
+}

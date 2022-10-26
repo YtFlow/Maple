@@ -1,9 +1,11 @@
 ﻿#include "pch.h"
 #include <winsock2.h>
+#include <chrono>
 
 #include "App.h"
 #include "MainPage.h"
 #include "EditPage.h"
+#include "MonacoEditPage.h"
 
 using namespace winrt;
 using namespace Windows::ApplicationModel;
@@ -116,14 +118,23 @@ void App::OnLaunched(LaunchActivatedEventArgs const& e)
 /// <param name="e">Details about the suspend request.</param>
 fire_and_forget App::OnSuspending([[maybe_unused]] IInspectable const& sender, [[maybe_unused]] SuspendingEventArgs const& e)
 {
+    using namespace std::literals::chrono_literals;
     // Save application state and stop any background activity
     const auto& saveModifiedContent = EditPage::SaveModifiedContent;
-    if (saveModifiedContent == nullptr) {
+    const auto& saveMonacoModifiedContent = MonacoEditPage::SaveModifiedContent;
+    if (saveModifiedContent == nullptr && saveMonacoModifiedContent) {
         co_return;
     }
 
     const auto& def = e.SuspendingOperation().GetDeferral();
-    co_await saveModifiedContent();
+    if (saveModifiedContent != nullptr) {
+        co_await saveModifiedContent();
+    }
+    if (saveMonacoModifiedContent != nullptr)
+    {
+        co_await saveMonacoModifiedContent();
+        co_await 1500ms;
+    }
     def.Complete();
 }
 

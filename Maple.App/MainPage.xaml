@@ -8,6 +8,7 @@
     xmlns:pickers="using:Windows.Storage.Pickers"
     xmlns:Windows10FallCreatorsUpdate="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 5)"
     xmlns:Windows10version1809="http://schemas.microsoft.com/winfx/2006/xaml/presentation?IsApiContractPresent(Windows.Foundation.UniversalApiContract, 7)"
+    xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     mc:Ignorable="d"
     NavigationCacheMode="Required"
     Loaded="Page_Loaded">
@@ -61,7 +62,7 @@
             Grid.ColumnSpan="3"
             DisplayMode="Overlay"
             PaneClosing="MainSplitView_PaneClosing"
-            Background="White" >
+            Background="White">
             <SplitView.Pane>
                 <Pivot x:Name="MainPivot" PivotItemLoaded="MainPivot_PivotItemLoaded">
                     <PivotItem Header="Config" Margin="0">
@@ -101,6 +102,10 @@
                                             </MenuFlyoutItem.Command>
                                         </MenuFlyoutItem>
                                     </MenuFlyout>
+                                    <SolidColorBrush x:Key="ListViewItemForegroundSelected" Color="Black" />
+                                    <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="{StaticResource SystemAccentColorLight3}" />
+                                    <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="{StaticResource SystemAccentColorLight3}" Opacity=".6" />
+                                    <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="{StaticResource SystemAccentColorLight3}" Opacity=".8" />
                                 </ListView.Resources>
                                 <ListView.ItemTemplate>
                                     <DataTemplate x:DataType="maple_app:ConfigViewModel">
@@ -230,7 +235,7 @@
                     </PivotItem>
                 </Pivot>
             </SplitView.Pane>
-            <Frame x:Name="MainContentFrame" CacheSize="0" />
+            <Frame x:Name="MainContentFrame" CacheSize="2" />
         </SplitView>
 
         <VisualStateManager.VisualStateGroups>
