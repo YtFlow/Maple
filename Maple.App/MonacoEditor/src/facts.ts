@@ -56,7 +56,119 @@ export const GENERAL_SETTING_KEYS: IGeneralSettingDef[] = [
     { name: SETTING_API_INTERFACE, desc: '', kind: 'interface' },
     { name: SETTING_API_PORT, desc: '', kind: 'port' },
 ]
-export const GENERAL_SETTINGS_KEYS_SET = new Set(GENERAL_SETTING_KEYS.map(k => k.name))
 
 export const LOG_LEVELS = ['trace', 'debug', 'info', 'warn', 'error']
 export const LOG_LEVELS_SET = new Set(LOG_LEVELS)
+
+export interface IProxyProtocolDef {
+    name: string,
+    desc: string
+}
+
+export const PROTOCOL_DIRECT = 'direct'
+export const PROTOCOL_REJECT = 'reject'
+export const PROTOCOL_REJECT_DROP = 'drop'
+export const PROTOCOL_REDIRECT = 'redirect'
+export const PROTOCOL_SOCKS = 'socks'
+export const PROTOCOL_SHADOWSOCKS = 'shadowsocks'
+export const PROTOCOL_SHADOWSOCKS_SS = 'ss'
+export const PROTOCOL_TROJAN = 'trojan'
+export const PROTOCOL_VMESS = 'vmess'
+
+export const PROXY_PROTOCOLS: IProxyProtocolDef[] = [
+    { name: PROTOCOL_DIRECT, desc: '' },
+    { name: PROTOCOL_REJECT, desc: '' },
+    { name: PROTOCOL_REJECT_DROP, desc: '' },
+    { name: PROTOCOL_REDIRECT, desc: '' },
+    { name: PROTOCOL_SOCKS, desc: '' },
+    { name: PROTOCOL_SHADOWSOCKS, desc: '' },
+    { name: PROTOCOL_TROJAN, desc: '' },
+    { name: PROTOCOL_VMESS, desc: '' },
+]
+
+export const PROXY_PROTOCOLS_REQUIRING_HOST_SET = new Set([
+    PROTOCOL_REDIRECT,
+    PROTOCOL_SOCKS,
+    PROTOCOL_SHADOWSOCKS,
+    PROTOCOL_SHADOWSOCKS_SS,
+    PROTOCOL_TROJAN,
+    PROTOCOL_VMESS,
+])
+
+export const PROXY_PROPERTY_KEY_METHOD = 'encrypt-method'
+export const PROXY_PROPERTY_KEY_USERNAME = 'username'
+export const PROXY_PROPERTY_KEY_PASSWORD = 'password'
+export const PROXY_PROPERTY_KEY_WS = 'ws'
+export const PROXY_PROPERTY_KEY_WS_PATH = 'ws-path'
+export const PROXY_PROPERTY_KEY_WS_HOST = 'ws-host'
+export const PROXY_PROPERTY_KEY_TLS = 'tls'
+export const PROXY_PROPERTY_KEY_TLS_CERT = 'tls-cert'
+export const PROXY_PROPERTY_KEY_SNI = 'sni'
+export const PROXY_PROPERTY_KEY_QUIC = 'quic'
+export const PROXY_PROPERTY_KEY_AMUX = 'amux'
+export const PROXY_PROPERTY_KEY_AMUX_MAX = 'amux-max'
+export const PROXY_PROPERTY_KEY_AMUX_CON = 'amux-con'
+export const PROXY_PROPERTY_KEY_INTERFACE = 'interface'
+
+export interface IProxyPropertyKeyDef {
+    required: Set<string>
+    allowed: Set<string>
+}
+
+export const PROXY_PROTOCOL_PROPERTY_KEY_MAP: Record<string, IProxyPropertyKeyDef> = {
+    [PROTOCOL_DIRECT]: { required: new Set(), allowed: new Set() },
+    [PROTOCOL_REJECT]: { required: new Set(), allowed: new Set() },
+    [PROTOCOL_REJECT_DROP]: { required: new Set(), allowed: new Set() },
+    [PROTOCOL_REDIRECT]: { required: new Set(), allowed: new Set() },
+    [PROTOCOL_SOCKS]: { required: new Set(), allowed: new Set() },
+    [PROTOCOL_SHADOWSOCKS]: {
+        required: new Set([
+            PROXY_PROPERTY_KEY_METHOD,
+            PROXY_PROPERTY_KEY_PASSWORD,
+        ]),
+        allowed: new Set(),
+    },
+    [PROTOCOL_SHADOWSOCKS_SS]: {
+        required: new Set([
+            PROXY_PROPERTY_KEY_METHOD,
+            PROXY_PROPERTY_KEY_PASSWORD,
+        ]),
+        allowed: new Set(),
+    },
+    [PROTOCOL_TROJAN]: {
+        required: new Set([PROXY_PROPERTY_KEY_PASSWORD]),
+        allowed: new Set([
+            PROXY_PROPERTY_KEY_METHOD,
+            PROXY_PROPERTY_KEY_WS,
+            PROXY_PROPERTY_KEY_WS_PATH,
+            PROXY_PROPERTY_KEY_WS_HOST,
+            PROXY_PROPERTY_KEY_TLS,
+            PROXY_PROPERTY_KEY_TLS_CERT,
+            PROXY_PROPERTY_KEY_SNI,
+            PROXY_PROPERTY_KEY_QUIC,
+            PROXY_PROPERTY_KEY_AMUX,
+            PROXY_PROPERTY_KEY_AMUX_MAX,
+            PROXY_PROPERTY_KEY_AMUX_CON,
+        ])
+    },
+    [PROTOCOL_VMESS]: {
+        required: new Set([PROXY_PROPERTY_KEY_USERNAME]),
+        allowed: new Set([
+            PROXY_PROPERTY_KEY_METHOD,
+            PROXY_PROPERTY_KEY_WS,
+            PROXY_PROPERTY_KEY_WS_PATH,
+            PROXY_PROPERTY_KEY_WS_HOST,
+            PROXY_PROPERTY_KEY_TLS,
+            PROXY_PROPERTY_KEY_TLS_CERT,
+            PROXY_PROPERTY_KEY_SNI,
+            PROXY_PROPERTY_KEY_QUIC,
+            PROXY_PROPERTY_KEY_AMUX,
+            PROXY_PROPERTY_KEY_AMUX_MAX,
+            PROXY_PROPERTY_KEY_AMUX_CON,
+        ])
+    },
+}
+export const PROXY_PROPERTY_VMESS_REQUIRES = new Set([PROXY_PROPERTY_KEY_USERNAME])
+
+export const KNOWN_AEAD_CIPHERS = ['chacha20-poly1305', 'chacha20-ietf-poly1305', 'aes-256-gcm', 'aes-128-gcm']
+export const KNOWN_AEAD_CIPHERS_SET = new Set(KNOWN_AEAD_CIPHERS)
