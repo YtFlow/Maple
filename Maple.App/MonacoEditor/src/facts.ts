@@ -4,6 +4,7 @@ export const SECTION_PROXY = 'Proxy'
 export const SECTION_PROXY_GROUP = 'Proxy Group'
 export const SECTION_RULE = 'Rule'
 export const SECTION_HOST = 'Host'
+export const SECTION_ON_DEMAND = 'On Demand'
 export const KNOWN_SECTION_NAMES = [
     SECTION_ENV,
     SECTION_GENERAL,
@@ -11,6 +12,7 @@ export const KNOWN_SECTION_NAMES = [
     SECTION_PROXY_GROUP,
     SECTION_RULE,
     SECTION_HOST,
+    SECTION_ON_DEMAND,
 ]
 export const KNOWN_SECTION_NAMES_SET = new Set(KNOWN_SECTION_NAMES)
 
@@ -62,7 +64,7 @@ export const LOG_LEVELS_SET = new Set(LOG_LEVELS)
 
 export interface IProxyProtocolDef {
     name: string,
-    desc: string
+    desc: string,
 }
 
 export const PROTOCOL_DIRECT = 'direct'
@@ -168,7 +170,123 @@ export const PROXY_PROTOCOL_PROPERTY_KEY_MAP: Record<string, IProxyPropertyKeyDe
         ])
     },
 }
-export const PROXY_PROPERTY_VMESS_REQUIRES = new Set([PROXY_PROPERTY_KEY_USERNAME])
 
 export const KNOWN_AEAD_CIPHERS = ['chacha20-poly1305', 'chacha20-ietf-poly1305', 'aes-256-gcm', 'aes-128-gcm']
 export const KNOWN_AEAD_CIPHERS_SET = new Set(KNOWN_AEAD_CIPHERS)
+
+export const GROUP_TYPE_CHAIN = 'chain'
+export const GROUP_TYPE_TRYALL = 'tryall'
+export const GROUP_TYPE_STATIC = 'static'
+export const GROUP_TYPE_FAILOVER = 'failover'
+export const GROUP_TYPE_FALLBACK = 'fallback'
+export const GROUP_TYPE_FAILOVER_URL_TEST = 'url-test'
+export const GROUP_TYPE_SELECT = 'select'
+
+export const GROUP_TYPES: IProxyProtocolDef[] = [
+    { name: GROUP_TYPE_CHAIN, desc: '' },
+    { name: GROUP_TYPE_TRYALL, desc: '' },
+    { name: GROUP_TYPE_STATIC, desc: '' },
+    { name: GROUP_TYPE_FAILOVER, desc: '' },
+    { name: GROUP_TYPE_FALLBACK, desc: '' },
+    { name: GROUP_TYPE_FAILOVER_URL_TEST, desc: '' },
+    { name: GROUP_TYPE_SELECT, desc: '' },
+]
+
+export const GROUP_PROPERTY_KEY_DELAY_BASE = 'delay-base'
+export const GROUP_PROPERTY_KEY_METHOD = 'method'
+export const GROUP_PROPERTY_KEY_FAIL_TIMEOUT = 'fail-timeout'
+export const GROUP_PROPERTY_KEY_HEALTH_CHECK = 'health-check'
+export const GROUP_PROPERTY_KEY_HEALTH_CHECK_TIMEOUT = 'health-check-timeout'
+export const GROUP_PROPERTY_KEY_HEALTH_CHECK_DELAY = 'health-check-delay'
+export const GROUP_PROPERTY_KEY_HEALTH_CHECK_ACTIVE = 'health-check-active'
+export const GROUP_PROPERTY_KEY_CHECK_INTERVAL = 'check-interval'
+export const GROUP_PROPERTY_KEY_FAILOVER = 'failover'
+export const GROUP_PROPERTY_KEY_FALLBACK_CACHE = 'fallback-cache'
+export const GROUP_PROPERTY_KEY_CACHE_SIZE = 'cache-size'
+export const GROUP_PROPERTY_KEY_CACHE_TIMEOUT = 'cache-timeout'
+export const GROUP_PROPERTY_KEY_LAST_RESORT = 'last-resort'
+
+export const GROUP_METHOD_RANDOM = 'random'
+export const GROUP_METHOD_RANDOM_ONCE = 'random-once'
+export const GROUP_METHOD_ROUND_ROBIN = 'rr'
+
+export const KNOWN_GROUP_METHODS = [GROUP_METHOD_RANDOM, GROUP_METHOD_RANDOM_ONCE, GROUP_METHOD_ROUND_ROBIN]
+export const KNOWN_GROUP_METHODS_SET = new Set(KNOWN_GROUP_METHODS)
+
+export const PROXY_GROUP_PROPERTY_KEY_MAP: Record<string, IProxyPropertyKeyDef> = {
+    [GROUP_TYPE_CHAIN]: { required: new Set(), allowed: new Set() },
+    [GROUP_TYPE_TRYALL]: { required: new Set(), allowed: new Set([GROUP_PROPERTY_KEY_DELAY_BASE]) },
+    [GROUP_TYPE_STATIC]: { required: new Set(), allowed: new Set([GROUP_PROPERTY_KEY_METHOD]) },
+    [GROUP_TYPE_FAILOVER]: {
+        required: new Set(), allowed: new Set([
+            GROUP_PROPERTY_KEY_FAIL_TIMEOUT,
+            GROUP_PROPERTY_KEY_HEALTH_CHECK,
+            GROUP_PROPERTY_KEY_HEALTH_CHECK_TIMEOUT,
+            GROUP_PROPERTY_KEY_HEALTH_CHECK_DELAY,
+            GROUP_PROPERTY_KEY_HEALTH_CHECK_ACTIVE,
+            GROUP_PROPERTY_KEY_CHECK_INTERVAL,
+            GROUP_PROPERTY_KEY_FAILOVER,
+            GROUP_PROPERTY_KEY_FALLBACK_CACHE,
+            GROUP_PROPERTY_KEY_CACHE_SIZE,
+            GROUP_PROPERTY_KEY_CACHE_TIMEOUT,
+            GROUP_PROPERTY_KEY_LAST_RESORT,
+        ])
+    },
+    [GROUP_TYPE_FALLBACK]: {
+        required: new Set(), allowed: new Set([
+            GROUP_PROPERTY_KEY_FAIL_TIMEOUT,
+            GROUP_PROPERTY_KEY_HEALTH_CHECK,
+            GROUP_PROPERTY_KEY_HEALTH_CHECK_TIMEOUT,
+            GROUP_PROPERTY_KEY_HEALTH_CHECK_DELAY,
+            GROUP_PROPERTY_KEY_HEALTH_CHECK_ACTIVE,
+            GROUP_PROPERTY_KEY_CHECK_INTERVAL,
+            GROUP_PROPERTY_KEY_FAILOVER,
+            GROUP_PROPERTY_KEY_FALLBACK_CACHE,
+            GROUP_PROPERTY_KEY_CACHE_SIZE,
+            GROUP_PROPERTY_KEY_CACHE_TIMEOUT,
+            GROUP_PROPERTY_KEY_LAST_RESORT,
+        ])
+    },
+    [GROUP_TYPE_FAILOVER_URL_TEST]: {
+        required: new Set(), allowed: new Set([
+            GROUP_PROPERTY_KEY_FAIL_TIMEOUT,
+            GROUP_PROPERTY_KEY_HEALTH_CHECK,
+            GROUP_PROPERTY_KEY_HEALTH_CHECK_TIMEOUT,
+            GROUP_PROPERTY_KEY_HEALTH_CHECK_DELAY,
+            GROUP_PROPERTY_KEY_HEALTH_CHECK_ACTIVE,
+            GROUP_PROPERTY_KEY_CHECK_INTERVAL,
+            GROUP_PROPERTY_KEY_FAILOVER,
+            GROUP_PROPERTY_KEY_FALLBACK_CACHE,
+            GROUP_PROPERTY_KEY_CACHE_SIZE,
+            GROUP_PROPERTY_KEY_CACHE_TIMEOUT,
+            GROUP_PROPERTY_KEY_LAST_RESORT,
+        ])
+    },
+    [GROUP_TYPE_SELECT]: { required: new Set(), allowed: new Set() },
+}
+
+export interface IRuleTypeDef {
+    name: string,
+    desc: string,
+}
+
+export const RULE_TYPE_IP_CIDR = 'IP-CIDR'
+export const RULE_TYPE_DOMAIN = 'DOMAIN'
+export const RULE_TYPE_DOMAIN_SUFFIX = 'DOMAIN-SUFFIX'
+export const RULE_TYPE_DOMAIN_KEYWORD = 'DOMAIN-KEYWORD'
+export const RULE_TYPE_GEOIP = 'GEOIP'
+export const RULE_TYPE_EXTERNAL = 'EXTERNAL'
+export const RULE_TYPE_FINAL = 'FINAL'
+
+export const RULE_TYPES: IRuleTypeDef[] = [
+    { name: RULE_TYPE_IP_CIDR, desc: '' },
+    { name: RULE_TYPE_DOMAIN, desc: '' },
+    { name: RULE_TYPE_DOMAIN_SUFFIX, desc: '' },
+    { name: RULE_TYPE_DOMAIN_KEYWORD, desc: '' },
+    { name: RULE_TYPE_GEOIP, desc: '' },
+    { name: RULE_TYPE_EXTERNAL, desc: '' },
+    { name: RULE_TYPE_FINAL, desc: '' },
+]
+
+export const RULE_EXTERNAL_SOURCE_MMDB = 'mmdb'
+export const RULE_EXTERNAL_SOURCE_SITE = 'site'
