@@ -25,7 +25,7 @@ export type ILeafConfTextSpan = { text: string, startCol: number }
 export function trimWithPos(s: string, startCol: number) {
     const matches = s.match(/^(\s*)([^\s].*)$/)
     if (!matches) {
-        return { trimmed: '', startCol }
+        return { trimmed: '', startCol: startCol + s.length }
     }
     const [_, whitespace, text] = matches
     return { trimmed: text.trimEnd(), startCol: startCol + whitespace.length }

@@ -215,7 +215,7 @@ function validateGeneral(
                         errors.push({
                             severity: monaco.MarkerSeverity.Error,
                             startLineNumber: currLineId,
-                            startColumn: item.keyStartCol,
+                            startColumn: item.valueStartCol,
                             endLineNumber: currLineId,
                             endColumn: item.valueStartCol + item.value.length,
                             message: `"true" or "false" expected.`,
@@ -409,7 +409,7 @@ function validateProxyItem(
             })
         }
         // TODO: validate host names
-        if (argsWithoutKv.length === 1 || argsWithoutKv[1].text === '') {
+        if (argsWithoutKv.length <= 1 || argsWithoutKv[1].text === '') {
             errors.push({
                 severity: monaco.MarkerSeverity.Error,
                 startLineNumber: item.lineId,

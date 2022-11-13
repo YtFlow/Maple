@@ -65,6 +65,7 @@ export const LOG_LEVELS_SET = new Set(LOG_LEVELS)
 export interface IProxyProtocolDef {
     name: string,
     desc: string,
+    snippet: string,
 }
 
 export const PROTOCOL_DIRECT = 'direct'
@@ -77,15 +78,19 @@ export const PROTOCOL_SHADOWSOCKS_SS = 'ss'
 export const PROTOCOL_TROJAN = 'trojan'
 export const PROTOCOL_VMESS = 'vmess'
 
+export const KNOWN_AEAD_CIPHERS = ['chacha20-poly1305', 'chacha20-ietf-poly1305', 'aes-256-gcm', 'aes-128-gcm']
+export const KNOWN_AEAD_CIPHERS_SET = new Set(KNOWN_AEAD_CIPHERS)
+
 export const PROXY_PROTOCOLS: IProxyProtocolDef[] = [
-    { name: PROTOCOL_DIRECT, desc: '' },
-    { name: PROTOCOL_REJECT, desc: '' },
-    { name: PROTOCOL_REJECT_DROP, desc: '' },
-    { name: PROTOCOL_REDIRECT, desc: '' },
-    { name: PROTOCOL_SOCKS, desc: '' },
-    { name: PROTOCOL_SHADOWSOCKS, desc: '' },
-    { name: PROTOCOL_TROJAN, desc: '' },
-    { name: PROTOCOL_VMESS, desc: '' },
+    { name: PROTOCOL_DIRECT, desc: '', snippet: 'direct' },
+    { name: PROTOCOL_REJECT, desc: '', snippet: 'reject' },
+    { name: PROTOCOL_REJECT_DROP, desc: '', snippet: 'drop' },
+    { name: PROTOCOL_REDIRECT, desc: '', snippet: 'redirect, ${1:host}, ${2:port}' },
+    { name: PROTOCOL_SOCKS, desc: '', snippet: 'socks, ${1:host}, ${2:port}' },
+    { name: PROTOCOL_SHADOWSOCKS, desc: '', snippet: `shadowsocks, \${1:host}, \${2:port}, encrypt-method=\${3|${KNOWN_AEAD_CIPHERS.join(',')}|}, password=\${4:password}` },
+    { name: PROTOCOL_SHADOWSOCKS_SS, desc: '', snippet: `ss, \${1:host}, \${2:port}, encrypt-method=\${3|${KNOWN_AEAD_CIPHERS.join(',')}|}, password=\${4:password}` },
+    { name: PROTOCOL_TROJAN, desc: '', snippet: 'trojan, ${1:ip}, ${2:port}, password=${3:password}, sni=${4:hostname}' },
+    { name: PROTOCOL_VMESS, desc: '', snippet: 'vmess, ${1:host}, ${2:port}, username=${3:username}' },
 ]
 
 export const PROXY_PROTOCOLS_REQUIRING_HOST_SET = new Set([
@@ -171,9 +176,6 @@ export const PROXY_PROTOCOL_PROPERTY_KEY_MAP: Record<string, IProxyPropertyKeyDe
     },
 }
 
-export const KNOWN_AEAD_CIPHERS = ['chacha20-poly1305', 'chacha20-ietf-poly1305', 'aes-256-gcm', 'aes-128-gcm']
-export const KNOWN_AEAD_CIPHERS_SET = new Set(KNOWN_AEAD_CIPHERS)
-
 export const GROUP_TYPE_CHAIN = 'chain'
 export const GROUP_TYPE_TRYALL = 'tryall'
 export const GROUP_TYPE_STATIC = 'static'
@@ -183,13 +185,13 @@ export const GROUP_TYPE_FAILOVER_URL_TEST = 'url-test'
 export const GROUP_TYPE_SELECT = 'select'
 
 export const GROUP_TYPES: IProxyProtocolDef[] = [
-    { name: GROUP_TYPE_CHAIN, desc: '' },
-    { name: GROUP_TYPE_TRYALL, desc: '' },
-    { name: GROUP_TYPE_STATIC, desc: '' },
-    { name: GROUP_TYPE_FAILOVER, desc: '' },
-    { name: GROUP_TYPE_FALLBACK, desc: '' },
-    { name: GROUP_TYPE_FAILOVER_URL_TEST, desc: '' },
-    { name: GROUP_TYPE_SELECT, desc: '' },
+    { name: GROUP_TYPE_CHAIN, desc: '', snippet: 'chain, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
+    { name: GROUP_TYPE_TRYALL, desc: '', snippet: 'tryall, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
+    { name: GROUP_TYPE_STATIC, desc: '', snippet: 'static, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
+    { name: GROUP_TYPE_FAILOVER, desc: '', snippet: 'failover, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}, health-check=${4|true,false|}, check-interval=${5:600}, fail-timeout=${6:5}, failover=${7|true,false|}' },
+    { name: GROUP_TYPE_FALLBACK, desc: '', snippet: 'fallback, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}, check-interval=${4:600}, fail-timeout=${5:5}' },
+    { name: GROUP_TYPE_FAILOVER_URL_TEST, desc: '', snippet: 'url-test, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}, check-interval=${4:600}, fail-timeout=${5:5}' },
+    { name: GROUP_TYPE_SELECT, desc: '', snippet: 'select, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
 ]
 
 export const GROUP_PROPERTY_KEY_DELAY_BASE = 'delay-base'
