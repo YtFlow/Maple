@@ -62,7 +62,7 @@ function validateBoolLike(val: string, lineId: number, startCol: number, errors:
 }
 
 function validateI32(val: string, lineId: number, startCol: number, errors: monaco.editor.IMarkerData[]) {
-    if (isNaN(+val)) {
+    if (val === '' || isNaN(+val)) {
         errors.push({
             severity: monaco.MarkerSeverity.Error,
             startLineNumber: lineId,
@@ -125,16 +125,7 @@ function validateGeneral(
 
             switch (item.key) {
                 case facts.SETTING_TUN_FD:
-                    if (Number.isNaN(Number.parseInt)) {
-                        errors.push({
-                            severity: monaco.MarkerSeverity.Error,
-                            startLineNumber: currLineId,
-                            startColumn: item.valueStartCol,
-                            endLineNumber: currLineId,
-                            endColumn: item.valueStartCol + item.value.length,
-                            message: `tun-fd must be a number.`,
-                        })
-                    }
+                    validateI32(item.value, currLineId, item.valueStartCol, errors)
                     errors.push({
                         severity: monaco.MarkerSeverity.Info,
                         startLineNumber: currLineId,

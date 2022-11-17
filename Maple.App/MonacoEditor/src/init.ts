@@ -48,7 +48,9 @@ function initLang() {
     monaco.languages.registerCompletionItemProvider('leafConf', completionProvider)
     monaco.languages.registerFoldingRangeProvider('leafConf', foldingRangeProvider)
 
-    const editor = monaco.editor.create(document.getElementById('container')!)
+    const editor = monaco.editor.create(document.getElementById('container')!, {
+        wordBasedSuggestions: false,
+    })
     const editorStates = new Map()
 
     window.addEventListener('resize', _ => {
