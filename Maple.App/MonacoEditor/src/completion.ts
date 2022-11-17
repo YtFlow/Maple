@@ -263,6 +263,7 @@ function completeProxy(
 
     return []
 }
+
 function completeProxyGroup(
     model: monaco.editor.ITextModel,
     position: monaco.Position,
@@ -316,7 +317,7 @@ function completeProxyGroup(
     if (currentKv !== undefined && position.column >= currentKv.valueStartCol) {
         // Want a property value
         const range = new monaco.Range(lineId, currentKv.valueStartCol, lineId, currentKv.valueStartCol + currentKv.value.length)
-        switch (currentKv.value) {
+        switch (currentKv.key) {
             case facts.GROUP_PROPERTY_KEY_METHOD:
                 return facts.KNOWN_GROUP_METHODS.map(m => ({
                     label: m,
@@ -375,6 +376,114 @@ function completeProxyGroup(
     return propertyKeySuggestions.concat(proxyOrGroupNameSuggestions)
 }
 
+function completeRule(model: monaco.editor.ITextModel,
+    position: monaco.Position,
+    struct: ILeafConfStruct,
+): monaco.languages.CompletionItem[] {
+    const lineId = position.lineNumber
+    const line = trimComment(model.getLineContent(lineId))
+    const args = splitByComma(line, 1)
+    const currentArgId = line.slice(0, position.column - 1).split(',').length - 1
+
+    if (currentArgId === 0) {
+        if (args.length > 1) {
+            const range = new monaco.Range(
+                lineId,
+                Math.min(position.column, args[0].startCol),
+                lineId,
+                Math.max(position.column, args[0].startCol + args[0].text.length),
+            )
+            return facts.RULE_TYPES.map(p => ({
+                label: p.name,
+                kind: monaco.languages.CompletionItemKind.Function,
+                insertText: p.name,
+                documentation: p.desc,
+                range,
+            }))
+        } else {
+            const range = new monaco.Range(
+                lineId,
+                Math.min(args[0].startCol),
+                lineId,
+                args[0].startCol + args[0].text.length,
+            )
+            return facts.RULE_TYPES.map(p => ({
+                label: p.name,
+                kind: monaco.languages.CompletionItemKind.Function,
+                insertText: p.snippet,
+                insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                documentation: p.desc,
+                range,
+            }))
+        }
+    }
+
+    const ruleType = args[0].text.trim()
+    if (ruleType === facts.RULE_TYPE_FINAL && currentArgId === 1 || currentArgId === 2) {
+        const range = new monaco.Range(lineId, args[currentArgId].startCol, lineId, args[currentArgId].startCol + args[currentArgId].text.length)
+        return collectProxyOrGroupSuggestions(model, struct, range)
+    }
+
+    if (ruleType === facts.RULE_TYPE_FINAL && currentArgId > 1 || currentArgId > 2) {
+        return []
+    }
+
+    if (ruleType === facts.RULE_TYPE_EXTERNAL) {
+        let colonPos = args[currentArgId].text.indexOf(':')
+        if (colonPos === -1) {
+            const range = new monaco.Range(
+                lineId,
+                Math.min(position.column, args[currentArgId].startCol),
+                lineId,
+                Math.max(position.column, args[currentArgId].startCol + args[currentArgId].text.length),
+            )
+            return [facts.RULE_EXTERNAL_SOURCE_SITE, facts.RULE_EXTERNAL_SOURCE_MMDB].map(p => ({
+                label: p,
+                kind: monaco.languages.CompletionItemKind.Field,
+                insertText: p + ':',
+                documentation: 'TODO: doc',
+                range,
+            }))
+        }
+        const colonCol = args[currentArgId].startCol + colonPos
+        if (position.column > colonCol) {
+            return []
+        }
+
+        const range = new monaco.Range(
+            lineId,
+            Math.min(position.column, args[currentArgId].startCol),
+            lineId,
+            Math.max(colonCol),
+        )
+        return [facts.RULE_EXTERNAL_SOURCE_SITE, facts.RULE_EXTERNAL_SOURCE_MMDB].map(p => ({
+            label: p,
+            kind: monaco.languages.CompletionItemKind.Field,
+            insertText: p,
+            documentation: 'TODO: doc',
+            range,
+        }))
+    }
+
+    if (ruleType === facts.RULE_TYPE_NETWORK) {
+        const range = new monaco.Range(
+            lineId,
+            Math.min(position.column, args[currentArgId].startCol),
+            lineId,
+            Math.max(position.column, args[currentArgId].startCol + args[currentArgId].text.length),
+        )
+        return [facts.RULE_NETWORK_TCP, facts.RULE_NETWORK_UDP].map(p => ({
+            label: p,
+            kind: monaco.languages.CompletionItemKind.EnumMember,
+            insertText: p,
+            documentation: 'TODO: doc',
+            range,
+        }))
+    }
+
+    return []
+}
+
 export const completionProvider: monaco.languages.CompletionItemProvider = {
     triggerCharacters: [' ', '[', ',', '='],
     provideCompletionItems(model, position) {
@@ -409,6 +518,9 @@ export const completionProvider: monaco.languages.CompletionItemProvider = {
                 break
             case facts.SECTION_PROXY_GROUP:
                 suggestions = completeProxyGroup(model, position, struct)
+                break
+            case facts.SECTION_RULE:
+                suggestions = completeRule(model, position, struct)
                 break
         }
         return { suggestions, incomplete: true }

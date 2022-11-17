@@ -270,6 +270,7 @@ export const PROXY_GROUP_PROPERTY_KEY_MAP: Record<string, IProxyPropertyKeyDef> 
 export interface IRuleTypeDef {
     name: string,
     desc: string,
+    snippet: string,
 }
 
 export const RULE_TYPE_IP_CIDR = 'IP-CIDR'
@@ -278,17 +279,26 @@ export const RULE_TYPE_DOMAIN_SUFFIX = 'DOMAIN-SUFFIX'
 export const RULE_TYPE_DOMAIN_KEYWORD = 'DOMAIN-KEYWORD'
 export const RULE_TYPE_GEOIP = 'GEOIP'
 export const RULE_TYPE_EXTERNAL = 'EXTERNAL'
+export const RULE_TYPE_PORT_RANGE = 'PORT-RANGE'
+export const RULE_TYPE_NETWORK = 'NETWORK'
+export const RULE_TYPE_INBOUND_TAG = 'INBOUND-TAG'
 export const RULE_TYPE_FINAL = 'FINAL'
 
 export const RULE_TYPES: IRuleTypeDef[] = [
-    { name: RULE_TYPE_IP_CIDR, desc: '' },
-    { name: RULE_TYPE_DOMAIN, desc: '' },
-    { name: RULE_TYPE_DOMAIN_SUFFIX, desc: '' },
-    { name: RULE_TYPE_DOMAIN_KEYWORD, desc: '' },
-    { name: RULE_TYPE_GEOIP, desc: '' },
-    { name: RULE_TYPE_EXTERNAL, desc: '' },
-    { name: RULE_TYPE_FINAL, desc: '' },
+    { name: RULE_TYPE_IP_CIDR, desc: '', snippet: 'IP-CIDR, ${1:8.8.8.8/24}, ${2:proxy}' },
+    { name: RULE_TYPE_DOMAIN, desc: '', snippet: 'DOMAIN, ${1:www.google.com}, ${2:proxy}' },
+    { name: RULE_TYPE_DOMAIN_SUFFIX, desc: '', snippet: 'DOMAIN-SUFFIX, ${1:example.com}, ${2:proxy}' },
+    { name: RULE_TYPE_DOMAIN_KEYWORD, desc: '', snippet: 'DOMAIN-KEYWORD, ${1:keyword}, ${2:proxy}' },
+    { name: RULE_TYPE_GEOIP, desc: '', snippet: 'GEOIP, ${1:us}, ${2:proxy}' },
+    { name: RULE_TYPE_EXTERNAL, desc: '', snippet: 'EXTERNAL, ${1|site:geolocation-cn,site:geosite.dat:category-ads-all,mmdb:cn|}, ${2:proxy}' },
+    { name: RULE_TYPE_PORT_RANGE, desc: '', snippet: 'PORT-RANGE, ${1:8000-9000}, ${2:proxy}' },
+    { name: RULE_TYPE_NETWORK, desc: '', snippet: 'NETWORK, ${1|TCP,UDP|}, ${2:proxy}' },
+    { name: RULE_TYPE_INBOUND_TAG, desc: '', snippet: 'INBOUND-TAG, ${1:inbound-tag}, ${2:proxy}' },
+    { name: RULE_TYPE_FINAL, desc: '', snippet: 'FINAL, ${1:proxy}' },
 ]
+
+export const RULE_NETWORK_TCP = 'TCP'
+export const RULE_NETWORK_UDP = 'UDP'
 
 export const RULE_EXTERNAL_SOURCE_MMDB = 'mmdb'
 export const RULE_EXTERNAL_SOURCE_SITE = 'site'

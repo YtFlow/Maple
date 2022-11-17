@@ -969,6 +969,49 @@ function validateRules(
                             }
                         }
                         break
+                    case facts.RULE_TYPE_PORT_RANGE:
+                        {
+                            const hypenPos = ruleItem.text.indexOf('-')
+                            if (hypenPos === -1) {
+                                errors.push({
+                                    severity: monaco.MarkerSeverity.Error,
+                                    startLineNumber: currLineId,
+                                    startColumn: ruleItem.startCol,
+                                    endLineNumber: currLineId,
+                                    endColumn: ruleItem.startCol + ruleItem.text.length,
+                                    message: `A port range must have two components, separated by a hyphen ("-").`,
+                                })
+                            } else {
+                                validatePortNumber(
+                                    ruleItem.text.substring(0, hypenPos),
+                                    currLineId,
+                                    ruleItem.startCol,
+                                    errors,
+                                )
+                                validatePortNumber(
+                                    ruleItem.text.substring(hypenPos + 1),
+                                    currLineId,
+                                    ruleItem.startCol + hypenPos + 1,
+                                    errors,
+                                )
+                            }
+                        }
+                        break
+                    case facts.RULE_TYPE_NETWORK:
+                        if (ruleItem.text !== facts.RULE_NETWORK_TCP && ruleItem.text !== facts.RULE_NETWORK_UDP) {
+                            errors.push({
+                                severity: monaco.MarkerSeverity.Error,
+                                startLineNumber: currLineId,
+                                startColumn: ruleItem.startCol,
+                                endLineNumber: currLineId,
+                                endColumn: ruleItem.startCol + ruleItem.text.length,
+                                message: `Unknown network type "${ruleItem.text}". Allowed values are "TCP" and "UDP".`,
+                            })
+                        }
+                        break
+                    case facts.RULE_TYPE_INBOUND_TAG:
+                        // ???
+                        break
                     default:
                         break
                 }
