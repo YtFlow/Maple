@@ -4,6 +4,7 @@ import { foldingRangeProvider } from './folding'
 import { completionProvider } from './completion'
 import { validateModel } from './validate'
 import { definitionProvider } from './definition'
+import { referenceProvider, renameProvider } from './reference'
 
 declare global {
     interface Window {
@@ -49,6 +50,8 @@ function initLang() {
     monaco.languages.registerCompletionItemProvider('leafConf', completionProvider)
     monaco.languages.registerFoldingRangeProvider('leafConf', foldingRangeProvider)
     monaco.languages.registerDefinitionProvider('leafConf', definitionProvider)
+    monaco.languages.registerReferenceProvider('leafConf', referenceProvider)
+    monaco.languages.registerRenameProvider('leafConf', renameProvider)
 
     const editor = monaco.editor.create(document.getElementById('container')!, {
         wordBasedSuggestions: false,
