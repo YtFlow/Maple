@@ -39,28 +39,29 @@ export const SETTING_SOCKS_PORT = 'socks-port'
 export const SETTING_API_INTERFACE = 'api-interface'
 export const SETTING_API_PORT = 'api-port'
 
-export const GENERAL_SETTING_KEYS: IGeneralSettingDef[] = [
-    { name: SETTING_TUN_FD, desc: '', kind: 'other' },
-    { name: SETTING_TUN, desc: '', kind: 'other' },
-    { name: SETTING_LOGLEVEL, desc: '', kind: 'other' },
-    { name: SETTING_LOGOUTPUT, desc: '', kind: 'other' },
-    { name: SETTING_DNS_SERVER, desc: '', kind: 'other' },
-    { name: SETTING_DNS_INTERFACE, desc: '', kind: 'interface' },
-    { name: SETTING_ALWAYS_REAL_IP, desc: '', kind: 'other' },
-    { name: SETTING_ALWAYS_FAKE_IP, desc: '', kind: 'other' },
-    { name: SETTING_ROUTING_DOMAIN_RESOLVE, desc: '', kind: 'other' },
-    { name: SETTING_HTTP_INTERFACE, desc: '', kind: 'interface' },
-    { name: SETTING_INTERFACE, desc: '', kind: 'interface' },
-    { name: SETTING_HTTP_PORT, desc: '', kind: 'port' },
-    { name: SETTING_PORT, desc: '', kind: 'port' },
-    { name: SETTING_SOCKS_INTERFACE, desc: '', kind: 'interface' },
-    { name: SETTING_SOCKS_PORT, desc: '', kind: 'port' },
-    { name: SETTING_API_INTERFACE, desc: '', kind: 'interface' },
-    { name: SETTING_API_PORT, desc: '', kind: 'port' },
-]
-
 export const LOG_LEVELS = ['trace', 'debug', 'info', 'warn', 'error']
 export const LOG_LEVELS_SET = new Set(LOG_LEVELS)
+
+export const GENERAL_SETTING_KEYS: IGeneralSettingDef[] = [
+    { name: SETTING_TUN_FD, desc: 'Specify the file discriptor number for TUN interface.\n\nThis option is automatically injected during VPN initialization and not intended to be set manually.', kind: 'other' },
+    { name: SETTING_TUN, desc: 'Parameters for TUN interface. Values can be either `auto` or a comma separated list of `name`, `address`, `netmask`, `gateway` and `mtu`.', kind: 'other' },
+    { name: SETTING_LOGLEVEL, desc: 'Logging level. Values can be `' + LOG_LEVELS.join('`, `') + '`.', kind: 'other' },
+    { name: SETTING_LOGOUTPUT, desc: 'Path to the log file.', kind: 'other' },
+    { name: SETTING_DNS_SERVER, desc: 'A comma separated list of DNS servers.', kind: 'other' },
+    { name: SETTING_DNS_INTERFACE, desc: 'Specify on which interface DNS requests will be routed.', kind: 'interface' },
+    { name: SETTING_ALWAYS_REAL_IP, desc: 'A comma separated list of domain names that will always be resolved to real IP addresses.\n\nThis option conflicts with `' + SETTING_ALWAYS_FAKE_IP + '`', kind: 'other' },
+    { name: SETTING_ALWAYS_FAKE_IP, desc: 'A comma separated list of domain names that will always be resolved to fake IP addresses.\n\nThis option conflicts with `' + SETTING_ALWAYS_REAL_IP + '`', kind: 'other' },
+    { name: SETTING_ROUTING_DOMAIN_RESOLVE, desc: 'Specify whether Leaf should resolve IP addresses for routing.\n\nFor `GEOIP` and `IP-CIDR` rules to match domain name requests, this should be enabled.', kind: 'other' },
+    { name: SETTING_HTTP_INTERFACE, desc: 'Specify on which interface HTTP inbound will be listening on.', kind: 'interface' },
+    { name: SETTING_INTERFACE, desc: 'Specify on which interface HTTP inbound will be listening on.\n\nAlias for `' + SETTING_HTTP_INTERFACE + '`.', kind: 'interface' },
+    { name: SETTING_HTTP_PORT, desc: 'Specify on which port HTTP inbound will be listening on.', kind: 'port' },
+    { name: SETTING_PORT, desc: 'Specify on which port HTTP inbound will be listening on.\n\nAlias for `' + SETTING_HTTP_PORT + '`.', kind: 'port' },
+    { name: SETTING_SOCKS_INTERFACE, desc: 'Specify on which interface SOCKS5 inbound will be listening on.', kind: 'interface' },
+    { name: SETTING_SOCKS_PORT, desc: 'Specify on which port SOCKS5 inbound will be listening on.', kind: 'port' },
+    { name: SETTING_API_INTERFACE, desc: 'Specify on which interface Leaf control API will be listening on.', kind: 'interface' },
+    { name: SETTING_API_PORT, desc: 'Specify on which port Leaf control API will be listening on.', kind: 'port' },
+]
+export const GENERAL_SETTING_KEYS_MAP = new Map(GENERAL_SETTING_KEYS.map(s => [s.name, s]))
 
 export interface IProxyProtocolDef {
     name: string,
@@ -82,16 +83,17 @@ export const KNOWN_AEAD_CIPHERS = ['chacha20-poly1305', 'chacha20-ietf-poly1305'
 export const KNOWN_AEAD_CIPHERS_SET = new Set(KNOWN_AEAD_CIPHERS)
 
 export const PROXY_PROTOCOLS: IProxyProtocolDef[] = [
-    { name: PROTOCOL_DIRECT, desc: '', snippet: 'direct' },
-    { name: PROTOCOL_REJECT, desc: '', snippet: 'reject' },
-    { name: PROTOCOL_REJECT_DROP, desc: '', snippet: 'drop' },
-    { name: PROTOCOL_REDIRECT, desc: '', snippet: 'redirect, ${1:host}, ${2:port}' },
-    { name: PROTOCOL_SOCKS, desc: '', snippet: 'socks, ${1:host}, ${2:port}' },
-    { name: PROTOCOL_SHADOWSOCKS, desc: '', snippet: `shadowsocks, \${1:host}, \${2:port}, encrypt-method=\${3|${KNOWN_AEAD_CIPHERS.join(',')}|}, password=\${4:password}` },
-    { name: PROTOCOL_SHADOWSOCKS_SS, desc: '', snippet: `ss, \${1:host}, \${2:port}, encrypt-method=\${3|${KNOWN_AEAD_CIPHERS.join(',')}|}, password=\${4:password}` },
-    { name: PROTOCOL_TROJAN, desc: '', snippet: 'trojan, ${1:ip}, ${2:port}, password=${3:password}, sni=${4:hostname}' },
-    { name: PROTOCOL_VMESS, desc: '', snippet: 'vmess, ${1:host}, ${2:port}, username=${3:username}' },
+    { name: PROTOCOL_DIRECT, desc: 'Forward requests directly without going through any proxies.', snippet: 'direct' },
+    { name: PROTOCOL_REJECT, desc: 'Close connections immediately.', snippet: 'reject' },
+    { name: PROTOCOL_REJECT_DROP, desc: 'Close connections immediately. Alias for `' + PROTOCOL_REJECT + '`.', snippet: 'drop' },
+    { name: PROTOCOL_REDIRECT, desc: 'Rewrite connection destinations to a pre-defined address.', snippet: 'redirect, ${1:host}, ${2:port}' },
+    { name: PROTOCOL_SOCKS, desc: 'A SOCKS5 proxy.', snippet: 'socks, ${1:host}, ${2:port}' },
+    { name: PROTOCOL_SHADOWSOCKS, desc: 'A Shadowsocks proxy.', snippet: `shadowsocks, \${1:host}, \${2:port}, encrypt-method=\${3|${KNOWN_AEAD_CIPHERS.join(',')}|}, password=\${4:password}` },
+    { name: PROTOCOL_SHADOWSOCKS_SS, desc: 'A Shadowsocks proxy. Alias for `' + PROTOCOL_SHADOWSOCKS + '`.', snippet: `ss, \${1:host}, \${2:port}, encrypt-method=\${3|${KNOWN_AEAD_CIPHERS.join(',')}|}, password=\${4:password}` },
+    { name: PROTOCOL_TROJAN, desc: 'A Trojan proxy.\n\nCompatible with Trojan-GFW and Trojan-Go with `ws` enabled.', snippet: 'trojan, ${1:ip}, ${2:port}, password=${3:password}, sni=${4:hostname}' },
+    { name: PROTOCOL_VMESS, desc: 'A VMess proxy with optional WebSocket and TLS transports.', snippet: 'vmess, ${1:host}, ${2:port}, username=${3:username}' },
 ]
+export const PROXY_PROTOCOLS_MAP: Map<string, IProxyProtocolDef> = new Map(PROXY_PROTOCOLS.map(p => [p.name, p]))
 
 export const PROXY_PROTOCOLS_REQUIRING_HOST_SET = new Set([
     PROTOCOL_REDIRECT,
@@ -116,6 +118,23 @@ export const PROXY_PROPERTY_KEY_AMUX = 'amux'
 export const PROXY_PROPERTY_KEY_AMUX_MAX = 'amux-max'
 export const PROXY_PROPERTY_KEY_AMUX_CON = 'amux-con'
 export const PROXY_PROPERTY_KEY_INTERFACE = 'interface'
+
+export const PROXY_PROPERTY_KEYS_DESC_MAP = new Map([
+    [PROXY_PROPERTY_KEY_METHOD, 'Encryption method for Shadowsocks and VMess. Possible values are `' + KNOWN_AEAD_CIPHERS.join('`, `') + '`.'],
+    [PROXY_PROPERTY_KEY_USERNAME, 'User name for VMess.'],
+    [PROXY_PROPERTY_KEY_PASSWORD, 'Password of the proxy server.'],
+    [PROXY_PROPERTY_KEY_WS, 'Specify whether WebSocket transport should be enabled.'],
+    [PROXY_PROPERTY_KEY_WS_PATH, 'Path for WebSocket transport.'],
+    [PROXY_PROPERTY_KEY_WS_HOST, 'Host for WebSocket transport.'],
+    [PROXY_PROPERTY_KEY_TLS, 'Specify whether TLS transport should be enabled.'],
+    [PROXY_PROPERTY_KEY_TLS_CERT, 'Certificate file for TLS transport.'],
+    [PROXY_PROPERTY_KEY_SNI, 'Server name (SNI), or host name for TLS transport.'],
+    [PROXY_PROPERTY_KEY_QUIC, 'Specify whether QUIC transport should be enabled.'],
+    [PROXY_PROPERTY_KEY_AMUX, 'Specify whether AMUX transport should be enabled.'],
+    [PROXY_PROPERTY_KEY_AMUX_MAX, 'Maximum number of connections per AMUX session.'],
+    [PROXY_PROPERTY_KEY_AMUX_CON, 'Maximum number of streams per AMUX session.'],
+    [PROXY_PROPERTY_KEY_INTERFACE, 'Specify the interface proxy requests should bind to.'],
+])
 
 export interface IProxyPropertyKeyDef {
     required: Set<string>
@@ -184,7 +203,13 @@ export const GROUP_TYPE_FALLBACK = 'fallback'
 export const GROUP_TYPE_FAILOVER_URL_TEST = 'url-test'
 export const GROUP_TYPE_SELECT = 'select'
 
-export const GROUP_TYPES: IProxyProtocolDef[] = [
+export interface IProxyGroupDef {
+    name: string,
+    desc: string,
+    snippet: string,
+}
+
+export const GROUP_TYPES: IProxyGroupDef[] = [
     { name: GROUP_TYPE_CHAIN, desc: '', snippet: 'chain, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
     { name: GROUP_TYPE_TRYALL, desc: '', snippet: 'tryall, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
     { name: GROUP_TYPE_STATIC, desc: '', snippet: 'static, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
@@ -193,6 +218,7 @@ export const GROUP_TYPES: IProxyProtocolDef[] = [
     { name: GROUP_TYPE_FAILOVER_URL_TEST, desc: '', snippet: 'url-test, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}, check-interval=${4:600}, fail-timeout=${5:5}' },
     { name: GROUP_TYPE_SELECT, desc: '', snippet: 'select, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
 ]
+export const GROUP_TYPES_MAP: Map<string, IProxyGroupDef> = new Map(GROUP_TYPES.map(g => [g.name, g]))
 
 export const GROUP_PROPERTY_KEY_DELAY_BASE = 'delay-base'
 export const GROUP_PROPERTY_KEY_METHOD = 'method'
@@ -207,6 +233,22 @@ export const GROUP_PROPERTY_KEY_FALLBACK_CACHE = 'fallback-cache'
 export const GROUP_PROPERTY_KEY_CACHE_SIZE = 'cache-size'
 export const GROUP_PROPERTY_KEY_CACHE_TIMEOUT = 'cache-timeout'
 export const GROUP_PROPERTY_KEY_LAST_RESORT = 'last-resort'
+
+export const GROUP_PROPERTY_KEYS_DESC_MAP = new Map([
+    [GROUP_PROPERTY_KEY_DELAY_BASE, ''],
+    [GROUP_PROPERTY_KEY_METHOD, ''],
+    [GROUP_PROPERTY_KEY_FAIL_TIMEOUT, ''],
+    [GROUP_PROPERTY_KEY_HEALTH_CHECK, ''],
+    [GROUP_PROPERTY_KEY_HEALTH_CHECK_TIMEOUT, ''],
+    [GROUP_PROPERTY_KEY_HEALTH_CHECK_DELAY, ''],
+    [GROUP_PROPERTY_KEY_HEALTH_CHECK_ACTIVE, ''],
+    [GROUP_PROPERTY_KEY_CHECK_INTERVAL, ''],
+    [GROUP_PROPERTY_KEY_FAILOVER, ''],
+    [GROUP_PROPERTY_KEY_FALLBACK_CACHE, ''],
+    [GROUP_PROPERTY_KEY_CACHE_SIZE, ''],
+    [GROUP_PROPERTY_KEY_CACHE_TIMEOUT, ''],
+    [GROUP_PROPERTY_KEY_LAST_RESORT, ''],
+])
 
 export const GROUP_METHOD_RANDOM = 'random'
 export const GROUP_METHOD_RANDOM_ONCE = 'random-once'
@@ -285,17 +327,18 @@ export const RULE_TYPE_INBOUND_TAG = 'INBOUND-TAG'
 export const RULE_TYPE_FINAL = 'FINAL'
 
 export const RULE_TYPES: IRuleTypeDef[] = [
-    { name: RULE_TYPE_IP_CIDR, desc: '', snippet: 'IP-CIDR, ${1:8.8.8.8/24}, ${2:proxy}' },
-    { name: RULE_TYPE_DOMAIN, desc: '', snippet: 'DOMAIN, ${1:www.google.com}, ${2:proxy}' },
-    { name: RULE_TYPE_DOMAIN_SUFFIX, desc: '', snippet: 'DOMAIN-SUFFIX, ${1:example.com}, ${2:proxy}' },
-    { name: RULE_TYPE_DOMAIN_KEYWORD, desc: '', snippet: 'DOMAIN-KEYWORD, ${1:keyword}, ${2:proxy}' },
-    { name: RULE_TYPE_GEOIP, desc: '', snippet: 'GEOIP, ${1:us}, ${2:proxy}' },
-    { name: RULE_TYPE_EXTERNAL, desc: '', snippet: 'EXTERNAL, ${1|site:geolocation-cn,site:geosite.dat:category-ads-all,mmdb:cn|}, ${2:proxy}' },
-    { name: RULE_TYPE_PORT_RANGE, desc: '', snippet: 'PORT-RANGE, ${1:8000-9000}, ${2:proxy}' },
-    { name: RULE_TYPE_NETWORK, desc: '', snippet: 'NETWORK, ${1|TCP,UDP|}, ${2:proxy}' },
-    { name: RULE_TYPE_INBOUND_TAG, desc: '', snippet: 'INBOUND-TAG, ${1:inbound-tag}, ${2:proxy}' },
-    { name: RULE_TYPE_FINAL, desc: '', snippet: 'FINAL, ${1:proxy}' },
+    { name: RULE_TYPE_IP_CIDR, desc: 'Match connections with destination IP addresses within the specified IP CIDR range.\n\nTo match domain name requests, enable `' + SETTING_ROUTING_DOMAIN_RESOLVE + '` in General section.', snippet: 'IP-CIDR, ${1:8.8.8.8/24}, ${2:proxy}' },
+    { name: RULE_TYPE_DOMAIN, desc: 'Match connections with destination domain names identical to the specified value.', snippet: 'DOMAIN, ${1:www.google.com}, ${2:proxy}' },
+    { name: RULE_TYPE_DOMAIN_SUFFIX, desc: 'Match connections with destination domain names that end with the specified string.', snippet: 'DOMAIN-SUFFIX, ${1:example.com}, ${2:proxy}' },
+    { name: RULE_TYPE_DOMAIN_KEYWORD, desc: 'Match connections with destination domain names that contain the specified keyword.', snippet: 'DOMAIN-KEYWORD, ${1:keyword}, ${2:proxy}' },
+    { name: RULE_TYPE_GEOIP, desc: 'Match connections with destination IP addresses located within the specified country.\n\nMake sure a valid GeoIP database file `geo.mmdb` exists in the configuration folder.\n\nTo match domain name requests, enable `' + SETTING_ROUTING_DOMAIN_RESOLVE + '` in General section.', snippet: 'GEOIP, ${1:us}, ${2:proxy}' },
+    { name: RULE_TYPE_EXTERNAL, desc: 'Match connections using an external GeoIP or V2Ray geosite database file.\n\nV2Ray geosite: `site:<file>:<group>` or `site:<group>` with database file default to "site.dat".\n\nGeoIP: `mmdb:<country code>`. Make sure a valid GeoIP database file `geo.mmdb` exists in the configuration folder.', snippet: 'EXTERNAL, ${1|site:geolocation-cn,site:geosite.dat:category-ads-all,mmdb:cn|}, ${2:proxy}' },
+    { name: RULE_TYPE_PORT_RANGE, desc: 'Match connections with destination ports within the range.\n\nThe port range is specified by a lower bound and a upper bound, separated by a dash ("`").', snippet: 'PORT-RANGE, ${1:8000-9000}, ${2:proxy}' },
+    { name: RULE_TYPE_NETWORK, desc: 'Match TCP or UDP requests.', snippet: 'NETWORK, ${1|TCP,UDP|}, ${2:proxy}' },
+    { name: RULE_TYPE_INBOUND_TAG, desc: 'Match connections with the specified inbound tag.', snippet: 'INBOUND-TAG, ${1:inbound-tag}, ${2:proxy}' },
+    { name: RULE_TYPE_FINAL, desc: 'If none of the other rules match a connection, the proxy or proxy group specified in this rule will be used.', snippet: 'FINAL, ${1:proxy}' },
 ]
+export const RULE_TYPES_MAP: Map<string, IRuleTypeDef> = new Map(RULE_TYPES.map(r => [r.name, r]))
 
 export const RULE_NETWORK_TCP = 'TCP'
 export const RULE_NETWORK_UDP = 'UDP'

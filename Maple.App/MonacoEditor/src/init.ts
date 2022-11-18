@@ -5,6 +5,7 @@ import { completionProvider } from './completion'
 import { validateModel } from './validate'
 import { definitionProvider } from './definition'
 import { referenceProvider, renameProvider } from './reference'
+import { hoverProvider } from './hover'
 
 declare global {
     interface Window {
@@ -52,6 +53,7 @@ function initLang() {
     monaco.languages.registerDefinitionProvider('leafConf', definitionProvider)
     monaco.languages.registerReferenceProvider('leafConf', referenceProvider)
     monaco.languages.registerRenameProvider('leafConf', renameProvider)
+    monaco.languages.registerHoverProvider('leafConf', hoverProvider)
 
     const editor = monaco.editor.create(document.getElementById('container')!, {
         wordBasedSuggestions: false,

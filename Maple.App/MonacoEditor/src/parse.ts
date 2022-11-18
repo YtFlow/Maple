@@ -102,8 +102,9 @@ export function parseStruct(model: monaco.editor.ITextModel): ILeafConfStruct {
 
 export function findIndexOfSections(sections: ILeafConfSection[], lineId: number): number {
     // TODO: binary search
-    const pos = [...sections].reverse().findIndex(s => s.startLine < lineId)
-    if (pos === -1) {
+    const revSections = [...sections].reverse()
+    const pos = revSections.findIndex(s => s.startLine <= lineId)
+    if (pos === -1 || revSections[pos].startLine === lineId) {
         return -1
     }
     return sections.length - pos - 1

@@ -87,7 +87,10 @@ function provideDefinitionForRule(
     }
     const ruleType = args[0].text
     let targetName = args[currentArgId].text
-    if (ruleType === facts.RULE_TYPE_FINAL && currentArgId === 1 || currentArgId === 2) {
+    if (
+        (ruleType === facts.RULE_TYPE_FINAL && currentArgId === 1)
+        || (ruleType !== facts.RULE_TYPE_FINAL && currentArgId === 2)
+    ) {
         targetName = args[currentArgId].text
     } else {
         return undefined

@@ -7,9 +7,7 @@ function collectProxyOrGroupSuggestions(
     struct: ILeafConfStruct,
     range: monaco.Range,
 ) {
-    return struct.sections.filter(s =>
-        s.sectionName === facts.SECTION_PROXY || s.sectionName === facts.SECTION_PROXY_GROUP
-    )
+    return struct.sections.filter(s => s.sectionName === facts.SECTION_PROXY)
         .flatMap(s => Array.from({ length: s.endLine - s.startLine + 1 }, (_, i) => s.startLine + i))
         .map(lineId => parseKvLine(model.getLineContent(lineId), lineId, 1))
         .filter((kv): kv is ILeafConfKvItem => kv !== undefined)
@@ -17,8 +15,19 @@ function collectProxyOrGroupSuggestions(
             label: kv.key,
             kind: monaco.languages.CompletionItemKind.Variable,
             insertText: kv.key,
+            detail: 'proxy',
             range,
-        }))
+        })).concat(struct.sections.filter(s => s.sectionName === facts.SECTION_PROXY_GROUP)
+            .flatMap(s => Array.from({ length: s.endLine - s.startLine + 1 }, (_, i) => s.startLine + i))
+            .map(lineId => parseKvLine(model.getLineContent(lineId), lineId, 1))
+            .filter((kv): kv is ILeafConfKvItem => kv !== undefined)
+            .map(kv => ({
+                label: kv.key,
+                kind: monaco.languages.CompletionItemKind.Variable,
+                insertText: kv.key,
+                detail: 'proxy group',
+                range,
+            })))
 }
 
 function generateBoolCandidates(range: monaco.Range): monaco.languages.CompletionItem[] {
@@ -119,7 +128,6 @@ function completeGeneralSection(
                 kind: monaco.languages.CompletionItemKind.Keyword,
                 range,
                 insertText: 'auto',
-                documentation: 'TODO: doc',
             }]
         case facts.SETTING_LOGLEVEL:
             return facts.LOG_LEVELS.map(l => ({
@@ -127,22 +135,9 @@ function completeGeneralSection(
                 kind: monaco.languages.CompletionItemKind.Keyword,
                 range,
                 insertText: l,
-                documentation: 'TODO: doc',
             }))
         case facts.SETTING_ROUTING_DOMAIN_RESOLVE:
-            return [{
-                label: 'true',
-                kind: monaco.languages.CompletionItemKind.Keyword,
-                range,
-                insertText: 'true',
-                documentation: 'TODO: doc',
-            }, {
-                label: 'false',
-                kind: monaco.languages.CompletionItemKind.Keyword,
-                range,
-                insertText: 'false',
-                documentation: 'TODO: doc',
-            },]
+            return generateBoolCandidates(range)
     }
     return []
 }
@@ -176,7 +171,7 @@ function completeProxy(
                 Math.max(position.column, protocolItem.startCol + protocolItem.text.length))
         return facts.PROXY_PROTOCOLS.map(p => ({
             label: p.name,
-            kind: monaco.languages.CompletionItemKind.Constructor,
+            kind: monaco.languages.CompletionItemKind.Class,
             insertText: p.snippet,
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             documentation: p.desc,
@@ -186,7 +181,7 @@ function completeProxy(
         const range = new monaco.Range(lineId, protocolItem.startCol, lineId, protocolItem.startCol + protocolItem.text.length)
         return facts.PROXY_PROTOCOLS.map(p => ({
             label: p.name,
-            kind: monaco.languages.CompletionItemKind.Constructor,
+            kind: monaco.languages.CompletionItemKind.Class,
             insertText: p.name,
             documentation: p.desc,
             range,
@@ -232,7 +227,7 @@ function completeProxy(
             label: k,
             kind: monaco.languages.CompletionItemKind.Property,
             insertText: k,
-            documentation: 'TODO: doc',
+            documentation: facts.PROXY_PROPERTY_KEYS_DESC_MAP.get(k),
             range: currentKv === undefined
                 ? new monaco.Range(lineId, currentArg.startCol, lineId, currentArg.startCol + currentArg.text.length)
                 : new monaco.Range(lineId, currentKv.keyStartCol, lineId, currentKv.keyStartCol + currentKv.key.length),
@@ -368,7 +363,7 @@ function completeProxyGroup(
         label: k,
         kind: monaco.languages.CompletionItemKind.Property,
         insertText: k,
-        documentation: 'TODO: doc',
+        documentation: facts.GROUP_PROPERTY_KEYS_DESC_MAP.get(k),
         range: currentKv === undefined
             ? new monaco.Range(lineId, currentArg.startCol, lineId, currentArg.startCol + currentArg.text.length)
             : new monaco.Range(lineId, currentKv.keyStartCol, lineId, currentKv.keyStartCol + currentKv.key.length),

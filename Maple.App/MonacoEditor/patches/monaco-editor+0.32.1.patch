@@ -1,0 +1,27 @@
+diff --git a/node_modules/monaco-editor/esm/vs/base/common/marked/marked.js b/node_modules/monaco-editor/esm/vs/base/common/marked/marked.js
+index f9807f9..6ce5508 100644
+--- a/node_modules/monaco-editor/esm/vs/base/common/marked/marked.js
++++ b/node_modules/monaco-editor/esm/vs/base/common/marked/marked.js
+@@ -9,14 +9,6 @@
+  * The code in this file is generated from files in ./src/
+  */
+ 
+-// ESM-uncomment-begin
+-let __marked_exports = {};
+-(function() {
+-  function define(deps, factory) {
+-    factory(__marked_exports);
+-  }
+-  define.amd = true;
+-// ESM-uncomment-end
+ 
+  (function (global, factory) {
+   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+@@ -2943,7 +2935,3 @@ let __marked_exports = {};
+   Object.defineProperty(exports, '__esModule', { value: true });
+ }));
+ 
+-// ESM-uncomment-begin
+-})();
+-export var marked = (__marked_exports || exports);
+-// ESM-uncomment-end

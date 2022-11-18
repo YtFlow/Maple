@@ -1090,7 +1090,7 @@ export function validateModel(model: monaco.editor.ITextModel) {
     const struct = parseStruct(model)
     const { sections } = struct
     const errors: monaco.editor.IMarkerData[] = []
-    const firstSectionLineId = sections?.[0].startLine ?? lineCount + 1
+    const firstSectionLineId = sections?.[0]?.startLine ?? lineCount + 1
     let currLineId = 1
     while (currLineId < firstSectionLineId) {
         const { trimmed, startCol } = trimWithPos(trimComment(model.getLineContent(currLineId)), 1)
