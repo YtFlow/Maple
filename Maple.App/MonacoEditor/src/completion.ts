@@ -88,7 +88,7 @@ function completeGeneralSection(
                         kind: monaco.languages.CompletionItemKind.Keyword,
                         range,
                         insertText: eqPos === -1 ? `${k.name} = auto` : k.name + ' ',
-                        documentation: k.desc,
+                        documentation: { value: k.desc },
                     }
                 case facts.SETTING_LOGLEVEL:
                     return {
@@ -97,7 +97,7 @@ function completeGeneralSection(
                         range,
                         insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                         insertText: eqPos === -1 ? `${k.name} = \${1|${facts.LOG_LEVELS.join(',')}|}` : k.name + ' ',
-                        documentation: k.desc,
+                        documentation: { value: k.desc },
                     }
                 case facts.SETTING_ROUTING_DOMAIN_RESOLVE:
                     return {
@@ -106,7 +106,7 @@ function completeGeneralSection(
                         range,
                         insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                         insertText: eqPos === -1 ? `${k.name} = \${1|true,false|}` : k.name + ' ',
-                        documentation: k.desc,
+                        documentation: { value: k.desc },
                     }
             }
             return {
@@ -114,7 +114,7 @@ function completeGeneralSection(
                 kind: monaco.languages.CompletionItemKind.Keyword,
                 range,
                 insertText: eqPos === -1 ? k.name + ' = ' : k.name + ' ',
-                documentation: k.desc,
+                documentation: { value: k.desc },
             }
         })
     }
@@ -174,7 +174,7 @@ function completeProxy(
             kind: monaco.languages.CompletionItemKind.Class,
             insertText: p.snippet,
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: p.desc,
+            documentation: { value: p.desc },
             range,
         }))
     } else if (position.column <= protocolItem.startCol + protocolItem.text.length) {
@@ -183,7 +183,7 @@ function completeProxy(
             label: p.name,
             kind: monaco.languages.CompletionItemKind.Class,
             insertText: p.name,
-            documentation: p.desc,
+            documentation: { value: p.desc },
             range,
         }))
     }
@@ -227,7 +227,7 @@ function completeProxy(
             label: k,
             kind: monaco.languages.CompletionItemKind.Property,
             insertText: k,
-            documentation: facts.PROXY_PROPERTY_KEYS_DESC_MAP.get(k),
+            documentation: { value: facts.PROXY_PROPERTY_KEYS_DESC_MAP.get(k)! },
             range: currentKv === undefined
                 ? new monaco.Range(lineId, currentArg.startCol, lineId, currentArg.startCol + currentArg.text.length)
                 : new monaco.Range(lineId, currentKv.keyStartCol, lineId, currentKv.keyStartCol + currentKv.key.length),
@@ -291,7 +291,7 @@ function completeProxyGroup(
             kind: monaco.languages.CompletionItemKind.Constructor,
             insertText: p.snippet,
             insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            documentation: p.desc,
+            documentation: { value: p.desc },
             range,
         }))
     } else if (position.column <= groupTypeItem.startCol + groupTypeItem.text.length) {
@@ -300,7 +300,7 @@ function completeProxyGroup(
             label: p.name,
             kind: monaco.languages.CompletionItemKind.Constructor,
             insertText: p.name,
-            documentation: p.desc,
+            documentation: { value: p.desc },
             range,
         }))
     }
@@ -319,7 +319,7 @@ function completeProxyGroup(
                     kind: monaco.languages.CompletionItemKind.EnumMember,
                     insertText: m,
                     range,
-                    documentation: 'TODO: doc',
+                    documentation: { value: facts.GROUP_METHOD_DESC_MAP.get(m)! },
                 }))
             case facts.GROUP_PROPERTY_KEY_FAILOVER:
             case facts.GROUP_PROPERTY_KEY_FALLBACK_CACHE:
@@ -365,7 +365,7 @@ function completeProxyGroup(
         label: k,
         kind: monaco.languages.CompletionItemKind.Property,
         insertText: k,
-        documentation: facts.GROUP_PROPERTY_KEYS_DESC_MAP.get(k),
+        documentation: { value: facts.GROUP_PROPERTY_KEYS_DESC_MAP.get(k)! },
         range: currentKv === undefined
             ? new monaco.Range(lineId, currentArg.startCol, lineId, currentArg.startCol + currentArg.text.length)
             : new monaco.Range(lineId, currentKv.keyStartCol, lineId, currentKv.keyStartCol + currentKv.key.length),
@@ -394,7 +394,7 @@ function completeRule(model: monaco.editor.ITextModel,
                 label: p.name,
                 kind: monaco.languages.CompletionItemKind.Function,
                 insertText: p.name,
-                documentation: p.desc,
+                documentation: { value: p.desc },
                 range,
             }))
         } else {
@@ -409,7 +409,7 @@ function completeRule(model: monaco.editor.ITextModel,
                 kind: monaco.languages.CompletionItemKind.Function,
                 insertText: p.snippet,
                 insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                documentation: p.desc,
+                documentation: { value: p.desc },
                 range,
             }))
         }
@@ -438,7 +438,7 @@ function completeRule(model: monaco.editor.ITextModel,
                 label: p,
                 kind: monaco.languages.CompletionItemKind.Field,
                 insertText: p + ':',
-                documentation: 'TODO: doc',
+                documentation: { value: facts.RULE_EXTERNAL_SOURCE_DESC_MAP.get(p)! },
                 range,
             }))
         }
@@ -457,7 +457,7 @@ function completeRule(model: monaco.editor.ITextModel,
             label: p,
             kind: monaco.languages.CompletionItemKind.Field,
             insertText: p,
-            documentation: 'TODO: doc',
+            documentation: { value: facts.RULE_EXTERNAL_SOURCE_DESC_MAP.get(p)! },
             range,
         }))
     }
@@ -473,7 +473,6 @@ function completeRule(model: monaco.editor.ITextModel,
             label: p,
             kind: monaco.languages.CompletionItemKind.EnumMember,
             insertText: p,
-            documentation: 'TODO: doc',
             range,
         }))
     }

@@ -44,18 +44,18 @@ export const LOG_LEVELS_SET = new Set(LOG_LEVELS)
 
 export const GENERAL_SETTING_KEYS: IGeneralSettingDef[] = [
     { name: SETTING_TUN_FD, desc: 'Specify the file discriptor number for TUN interface.\n\nThis option is automatically injected during VPN initialization and not intended to be set manually.', kind: 'other' },
-    { name: SETTING_TUN, desc: 'Parameters for TUN interface. Values can be either `auto` or a comma separated list of `name`, `address`, `netmask`, `gateway` and `mtu`.', kind: 'other' },
-    { name: SETTING_LOGLEVEL, desc: 'Logging level. Values can be `' + LOG_LEVELS.join('`, `') + '`.', kind: 'other' },
-    { name: SETTING_LOGOUTPUT, desc: 'Path to the log file.', kind: 'other' },
+    { name: SETTING_TUN, desc: 'Enable TUN inbound. Values can be either `auto` or a comma separated list of `name`, `address`, `netmask`, `gateway` and `mtu`.', kind: 'other' },
+    { name: SETTING_LOGLEVEL, desc: 'Logging level. Values can be `' + LOG_LEVELS.join('`, `') + '`.\n\nDefaults to `INFO`.', kind: 'other' },
+    { name: SETTING_LOGOUTPUT, desc: 'Path to the log file.\n\nSet to `console` to print logs to the terminal.', kind: 'other' },
     { name: SETTING_DNS_SERVER, desc: 'A comma separated list of DNS servers.', kind: 'other' },
     { name: SETTING_DNS_INTERFACE, desc: 'Specify on which interface DNS requests will be routed.', kind: 'interface' },
     { name: SETTING_ALWAYS_REAL_IP, desc: 'A comma separated list of domain name keywords that will always be resolved to real IP addresses.\n\nThis option conflicts with `' + SETTING_ALWAYS_FAKE_IP + '`', kind: 'other' },
     { name: SETTING_ALWAYS_FAKE_IP, desc: 'A comma separated list of domain name keywords that will always be resolved to fake IP addresses.\n\nThis option conflicts with `' + SETTING_ALWAYS_REAL_IP + '`', kind: 'other' },
-    { name: SETTING_ROUTING_DOMAIN_RESOLVE, desc: 'Specify whether Leaf should resolve IP addresses for routing.\n\nFor `GEOIP` and `IP-CIDR` rules to match domain name requests, this should be enabled.', kind: 'other' },
-    { name: SETTING_HTTP_INTERFACE, desc: 'Specify on which interface HTTP inbound will be listening on.', kind: 'interface' },
-    { name: SETTING_INTERFACE, desc: 'Specify on which interface HTTP inbound will be listening on.\n\nAlias for `' + SETTING_HTTP_INTERFACE + '`.', kind: 'interface' },
-    { name: SETTING_HTTP_PORT, desc: 'Specify on which port HTTP inbound will be listening on.', kind: 'port' },
-    { name: SETTING_PORT, desc: 'Specify on which port HTTP inbound will be listening on.\n\nAlias for `' + SETTING_HTTP_PORT + '`.', kind: 'port' },
+    { name: SETTING_ROUTING_DOMAIN_RESOLVE, desc: 'Specify whether Leaf should resolve IP addresses for routing.\n\nFor `GEOIP` and `IP-CIDR` rules to match domain name requests, this should be enabled.\n\nDefaults to `false`.', kind: 'other' },
+    { name: SETTING_HTTP_INTERFACE, desc: `Specify on which interface HTTP inbound will be listening on.\n\nSet \`${SETTING_HTTP_PORT}\` or \`${SETTING_PORT}\` to enable HTTP inbound.`, kind: 'interface' },
+    { name: SETTING_INTERFACE, desc: `Specify on which interface HTTP inbound will be listening on.\n\nSet \`${SETTING_HTTP_PORT}\` or \`${SETTING_PORT}\` to enable HTTP inbound.\n\nAlias for \`${SETTING_HTTP_INTERFACE}\`.`, kind: 'interface' },
+    { name: SETTING_HTTP_PORT, desc: `Specify on which port HTTP inbound will be listening on.\n\nSet \`${SETTING_HTTP_INTERFACE}\` or \`${SETTING_INTERFACE}\` to enable HTTP inbound.`, kind: 'port' },
+    { name: SETTING_PORT, desc: `Specify on which port HTTP inbound will be listening on.\n\nSet \`${SETTING_HTTP_INTERFACE}\` or \`${SETTING_INTERFACE}\` to enable HTTP inbound.\n\nAlias for \`${SETTING_HTTP_PORT}\`.`, kind: 'port' },
     { name: SETTING_SOCKS_INTERFACE, desc: 'Specify on which interface SOCKS5 inbound will be listening on.', kind: 'interface' },
     { name: SETTING_SOCKS_PORT, desc: 'Specify on which port SOCKS5 inbound will be listening on.', kind: 'port' },
     { name: SETTING_API_INTERFACE, desc: 'Specify on which interface Leaf control API will be listening on.', kind: 'interface' },
@@ -120,19 +120,19 @@ export const PROXY_PROPERTY_KEY_AMUX_CON = 'amux-con'
 export const PROXY_PROPERTY_KEY_INTERFACE = 'interface'
 
 export const PROXY_PROPERTY_KEYS_DESC_MAP = new Map([
-    [PROXY_PROPERTY_KEY_METHOD, 'Encryption method for Shadowsocks and VMess. Possible values are `' + KNOWN_AEAD_CIPHERS.join('`, `') + '`.'],
+    [PROXY_PROPERTY_KEY_METHOD, `Encryption method for Shadowsocks and VMess. Possible values are \`${KNOWN_AEAD_CIPHERS.join('`, `')}\`.\n\nDefaults to \`chacha20-ietf-poly1305\`.`],
     [PROXY_PROPERTY_KEY_USERNAME, 'User name for VMess.'],
     [PROXY_PROPERTY_KEY_PASSWORD, 'Password of the proxy server.'],
-    [PROXY_PROPERTY_KEY_WS, 'Specify whether WebSocket transport should be enabled.'],
+    [PROXY_PROPERTY_KEY_WS, 'Specify whether WebSocket transport should be enabled.\n\nDefaults to \`false\`.'],
     [PROXY_PROPERTY_KEY_WS_PATH, 'Path for WebSocket transport.'],
     [PROXY_PROPERTY_KEY_WS_HOST, 'Host for WebSocket transport.'],
-    [PROXY_PROPERTY_KEY_TLS, 'Specify whether TLS transport should be enabled.'],
+    [PROXY_PROPERTY_KEY_TLS, 'Specify whether TLS transport should be enabled.\n\nDefaults to \`false\`.'],
     [PROXY_PROPERTY_KEY_TLS_CERT, 'Certificate file for TLS transport.'],
-    [PROXY_PROPERTY_KEY_SNI, 'Server name (SNI), or host name for TLS transport.'],
-    [PROXY_PROPERTY_KEY_QUIC, 'Specify whether QUIC transport should be enabled.'],
-    [PROXY_PROPERTY_KEY_AMUX, 'Specify whether AMUX transport should be enabled.'],
-    [PROXY_PROPERTY_KEY_AMUX_MAX, 'Maximum number of streams per AMUX session.'],
-    [PROXY_PROPERTY_KEY_AMUX_CON, 'Maximum number of concurrent connections per AMUX session.'],
+    [PROXY_PROPERTY_KEY_SNI, 'Server name (SNI), or host name for TLS transport.\n\nIf omitted, the host name of the proxy server will be used.'],
+    [PROXY_PROPERTY_KEY_QUIC, 'Specify whether QUIC transport should be enabled.\n\nDefaults to \`false\`.'],
+    [PROXY_PROPERTY_KEY_AMUX, 'Specify whether AMUX transport should be enabled.\n\nDefaults to \`false\`.'],
+    [PROXY_PROPERTY_KEY_AMUX_MAX, 'Maximum number of streams per AMUX session.\n\nDefaults to \`8\`.'],
+    [PROXY_PROPERTY_KEY_AMUX_CON, 'Maximum number of concurrent connections per AMUX session.\n\nDefaults to \`2\`.'],
     [PROXY_PROPERTY_KEY_INTERFACE, 'Specify the interface proxy requests should bind to.'],
 ])
 
@@ -223,28 +223,36 @@ export const GROUP_PROPERTY_KEY_CACHE_SIZE = 'cache-size'
 export const GROUP_PROPERTY_KEY_CACHE_TIMEOUT = 'cache-timeout'
 export const GROUP_PROPERTY_KEY_LAST_RESORT = 'last-resort'
 
-export const GROUP_PROPERTY_KEYS_DESC_MAP = new Map([
-    [GROUP_PROPERTY_KEY_DELAY_BASE, 'Specify the interval before starting the next connection attempt when all previous attemps are pending.'],
-    [GROUP_PROPERTY_KEY_METHOD, 'Selection method.\n\n`random`: Randomly choose an actor for each request.\n\n`random-once`: Randomly choose an actor when Leaf starts.\n\n`rr`: Round-robin.'],
-    [GROUP_PROPERTY_KEY_FAIL_TIMEOUT, 'Timeout for an actor to establish a connection, including TCP handshake and TLS handshake and protocol-specific initialization.'],
-    [GROUP_PROPERTY_KEY_HEALTH_CHECK, 'Specify whether a health check should be performed periodically to measure latencies of the actors.'],
-    [GROUP_PROPERTY_KEY_HEALTH_CHECK_TIMEOUT, 'Timeout for an actor to establish a connection during a health check, including TCP handshake and TLS handshake and protocol-specific initialization.'],
-    [GROUP_PROPERTY_KEY_HEALTH_CHECK_DELAY, 'Delay before starting a health check.'],
-    [GROUP_PROPERTY_KEY_HEALTH_CHECK_ACTIVE, 'Specify the interval where health checks are skipped if there is no new connections.'],
-    [GROUP_PROPERTY_KEY_CHECK_INTERVAL, 'Specify the interval between health checks.'],
-    [GROUP_PROPERTY_KEY_FAILOVER, 'Specify whether to switch to the next actor when the current actor fails.'],
-    [GROUP_PROPERTY_KEY_FALLBACK_CACHE, 'Specify whether previous succeeded actors should be cached for future connections.'],
-    [GROUP_PROPERTY_KEY_CACHE_SIZE, 'Maximum number of actors to cache.'],
-    [GROUP_PROPERTY_KEY_CACHE_TIMEOUT, 'Cache timeout in **minutes**.'],
-    [GROUP_PROPERTY_KEY_LAST_RESORT, 'Specify the actor to use when all actors in the list fail.'],
-])
-
 export const GROUP_METHOD_RANDOM = 'random'
 export const GROUP_METHOD_RANDOM_ONCE = 'random-once'
 export const GROUP_METHOD_ROUND_ROBIN = 'rr'
+const GROUP_METHOD_RANDOM_DESC = 'Randomly choose an actor for each request.'
+const GROUP_METHOD_RANDOM_ONCE_DESC = 'Randomly choose an actor when Leaf starts.'
+const GROUP_METHOD_ROUND_ROBIN_DESC = 'Round robin.'
+export const GROUP_METHOD_DESC_MAP: Map<string, string> = new Map([
+    [GROUP_METHOD_RANDOM, GROUP_METHOD_RANDOM_DESC],
+    [GROUP_METHOD_RANDOM_ONCE, GROUP_METHOD_RANDOM_ONCE_DESC],
+    [GROUP_METHOD_ROUND_ROBIN, GROUP_METHOD_ROUND_ROBIN_DESC],
+])
 
 export const KNOWN_GROUP_METHODS = [GROUP_METHOD_RANDOM, GROUP_METHOD_RANDOM_ONCE, GROUP_METHOD_ROUND_ROBIN]
 export const KNOWN_GROUP_METHODS_SET = new Set(KNOWN_GROUP_METHODS)
+
+export const GROUP_PROPERTY_KEYS_DESC_MAP = new Map([
+    [GROUP_PROPERTY_KEY_DELAY_BASE, 'Specify the interval (in **milliseconds**) before starting the next connection attempt when all previous attemps are pending.\n\nDefaults to \`0\`.'],
+    [GROUP_PROPERTY_KEY_METHOD, `Selection method.\n\n\`${GROUP_METHOD_RANDOM}\`: ${GROUP_METHOD_RANDOM_DESC}\n\n\`${GROUP_METHOD_RANDOM_ONCE}\`: ${GROUP_METHOD_RANDOM_ONCE_DESC}\n\n\`${GROUP_METHOD_ROUND_ROBIN}\`: ${GROUP_METHOD_ROUND_ROBIN_DESC}\n\n\nDefaults to \`${GROUP_METHOD_RANDOM}\`.`],
+    [GROUP_PROPERTY_KEY_FAIL_TIMEOUT, 'Timeout (in **seconds**) for an actor to establish a connection, including TCP handshake and TLS handshake and protocol-specific initialization.\n\nDefaults to \`4\`.'],
+    [GROUP_PROPERTY_KEY_HEALTH_CHECK, 'Specify whether a health check should be performed periodically to measure latencies of the actors.\n\nDefaults to \`true\`.'],
+    [GROUP_PROPERTY_KEY_HEALTH_CHECK_TIMEOUT, 'Timeout (in **seconds**) for an actor to establish a connection during a health check, including TCP handshake and TLS handshake and protocol-specific initialization.\n\nDefaults to \`4\`.'],
+    [GROUP_PROPERTY_KEY_HEALTH_CHECK_DELAY, 'Upper limit of random delay (in **milliseconds**) before starting a health check.\n\nDefaults to \`200\`.'],
+    [GROUP_PROPERTY_KEY_HEALTH_CHECK_ACTIVE, 'Specify the interval (in **seconds**) where health checks are skipped if there is no new connections.\n\nDefaults to \`900\`.'],
+    [GROUP_PROPERTY_KEY_CHECK_INTERVAL, 'Specify the interval (in **seconds**) between health checks.\n\nDefaults to \`300\`.'],
+    [GROUP_PROPERTY_KEY_FAILOVER, `Specify whether to switch to the next actor when the current actor fails.\n\nDefaults to \`false\` for \`${GROUP_TYPE_FAILOVER_URL_TEST}\`, otherwise \`true\`.`],
+    [GROUP_PROPERTY_KEY_FALLBACK_CACHE, 'Specify whether previous succeeded actors should be cached for future connections.\n\nDefaults to \`false\`.'],
+    [GROUP_PROPERTY_KEY_CACHE_SIZE, 'Maximum number of actors to cache.\n\nDefaults to \`256\`.'],
+    [GROUP_PROPERTY_KEY_CACHE_TIMEOUT, 'Cache timeout in **minutes**.\n\nDefaults to \`60\`.'],
+    [GROUP_PROPERTY_KEY_LAST_RESORT, 'Specify the actor to use when all actors in the list fail.'],
+])
 
 export const GROUP_TYPES: IProxyGroupDef[] = [
     { name: GROUP_TYPE_CHAIN, desc: 'Chaining proxies.', snippet: 'chain, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
@@ -332,7 +340,7 @@ export const RULE_TYPES: IRuleTypeDef[] = [
     { name: RULE_TYPE_DOMAIN_SUFFIX, desc: 'Match connections with destination domain names that end with the specified string.', snippet: 'DOMAIN-SUFFIX, ${1:example.com}, ${2:proxy}' },
     { name: RULE_TYPE_DOMAIN_KEYWORD, desc: 'Match connections with destination domain names that contain the specified keyword.', snippet: 'DOMAIN-KEYWORD, ${1:keyword}, ${2:proxy}' },
     { name: RULE_TYPE_GEOIP, desc: 'Match connections with destination IP addresses located within the specified country.\n\nMake sure a valid GeoIP database file `geo.mmdb` exists in the configuration folder.\n\nTo match domain name requests, enable `' + SETTING_ROUTING_DOMAIN_RESOLVE + '` in General section.', snippet: 'GEOIP, ${1:us}, ${2:proxy}' },
-    { name: RULE_TYPE_EXTERNAL, desc: 'Match connections using an external GeoIP or V2Ray geosite database file.\n\nV2Ray geosite: `site:<file>:<group>` or `site:<group>` with database file default to "site.dat".\n\nGeoIP: `mmdb:<country code>`. Make sure a valid GeoIP database file `geo.mmdb` exists in the configuration folder.', snippet: 'EXTERNAL, ${1|site:geolocation-cn,site:geosite.dat:category-ads-all,mmdb:cn,mmdb:geo.mmdb:cn|}, ${2:proxy}' },
+    { name: RULE_TYPE_EXTERNAL, desc: 'Match connections using an external GeoIP or V2Ray geosite database file.\n\nV2Ray geosite: `site:<file>:<group>` or `site:<group>` with database file defaults to "site.dat".\n\nGeoIP: `mmdb:<file>:<country code>` or `mmdb:<country code>` with GeoIP database file defaults to `geo.mmdb`.', snippet: 'EXTERNAL, ${1|site:geolocation-cn,site:geosite.dat:category-ads-all,mmdb:cn,mmdb:geo.mmdb:cn|}, ${2:proxy}' },
     { name: RULE_TYPE_PORT_RANGE, desc: 'Match connections with destination ports within the range.\n\nThe port range is specified by a lower bound and a upper bound, separated by a dash ("`").', snippet: 'PORT-RANGE, ${1:8000-9000}, ${2:proxy}' },
     { name: RULE_TYPE_NETWORK, desc: 'Match TCP or UDP requests.', snippet: 'NETWORK, ${1|TCP,UDP|}, ${2:proxy}' },
     { name: RULE_TYPE_INBOUND_TAG, desc: 'Match connections with the specified inbound tag.', snippet: 'INBOUND-TAG, ${1:inbound-tag}, ${2:proxy}' },
@@ -345,3 +353,7 @@ export const RULE_NETWORK_UDP = 'UDP'
 
 export const RULE_EXTERNAL_SOURCE_MMDB = 'mmdb'
 export const RULE_EXTERNAL_SOURCE_SITE = 'site'
+export const RULE_EXTERNAL_SOURCE_DESC_MAP: Map<string, string> = new Map([
+    [RULE_EXTERNAL_SOURCE_MMDB, 'GeoIP database (.mmdb)'],
+    [RULE_EXTERNAL_SOURCE_SITE, 'V2Ray geosite domain name list database (.dat)'],
+])

@@ -15,7 +15,31 @@ import { isValid as isValidIpAddr, parseCIDR } from 'ipaddr.js'
 
 const possiblyMistakenPositiveValues = new Set(['true', 'on', 'yes', '1', 'enable', 'enabled', 'allow'])
 
+function validateNonEmpty(val: string, lineId: number, startCol: number, errors: monaco.editor.IMarkerData[]) {
+    if (val === '') {
+        errors.push({
+            severity: monaco.MarkerSeverity.Error,
+            startLineNumber: lineId,
+            startColumn: startCol,
+            endLineNumber: lineId,
+            endColumn: startCol + val.length,
+            message: `Expected non-empty value.`,
+        })
+    }
+}
+
 function validatePortNumber(val: string, lineId: number, startCol: number, errors: monaco.editor.IMarkerData[]) {
+    if (val === '') {
+        errors.push({
+            severity: monaco.MarkerSeverity.Error,
+            startLineNumber: lineId,
+            startColumn: startCol,
+            endLineNumber: lineId,
+            endColumn: startCol + val.length,
+            message: `Expected port number.`,
+        })
+        return
+    }
     for (let i = 0; i < val.length; i++) {
         const charCode = val.charCodeAt(i)
         if (charCode < 48 || charCode > 57) {
@@ -81,6 +105,12 @@ function validateGeneral(
 ) {
     const visitedKeyItem: Map<string, ILeafConfKvItem> = new Map()
     let fakeIpFilterMode = ''
+    const interfacePortPair: Record<
+        'HTTP inbound' | 'SOCKS5 inbound' | 'Leaf control API',
+        { iface?: ILeafConfKvItem, port?: ILeafConfKvItem }
+    > = {
+        'HTTP inbound': {}, 'SOCKS5 inbound': {}, 'Leaf control API': {},
+    }
     for (const section of struct.sections.filter(s => s.sectionName === facts.SECTION_GENERAL)) {
         let currLineId = section.startLine
         while (++currLineId <= section.endLine) {
@@ -160,6 +190,7 @@ function validateGeneral(
                     }
                     break
                 case facts.SETTING_LOGOUTPUT:
+                    validateNonEmpty(item.value, currLineId, item.valueStartCol, errors)
                     break
                 case facts.SETTING_DNS_SERVER:
                     errors.push(...splitByComma(item.value, item.valueStartCol)
@@ -214,15 +245,38 @@ function validateGeneral(
                     }
                     break
                 case facts.SETTING_DNS_INTERFACE:
+                    validateNonEmpty(item.value, currLineId, item.valueStartCol, errors)
+                    break
                 case facts.SETTING_HTTP_INTERFACE:
+                    interfacePortPair['HTTP inbound'].iface = item
+                    validateNonEmpty(item.value, currLineId, item.valueStartCol, errors)
+                    break
                 case facts.SETTING_INTERFACE:
+                    interfacePortPair['HTTP inbound'].iface = item
+                    validateNonEmpty(item.value, currLineId, item.valueStartCol, errors)
+                    break
                 case facts.SETTING_SOCKS_INTERFACE:
+                    interfacePortPair['SOCKS5 inbound'].iface = item
+                    validateNonEmpty(item.value, currLineId, item.valueStartCol, errors)
+                    break
                 case facts.SETTING_API_INTERFACE:
+                    interfacePortPair['Leaf control API'].iface = item
+                    validateNonEmpty(item.value, currLineId, item.valueStartCol, errors)
                     break
                 case facts.SETTING_HTTP_PORT:
+                    interfacePortPair['HTTP inbound'].port = item
+                    validatePortNumber(item.value, currLineId, item.valueStartCol, errors)
+                    break
                 case facts.SETTING_PORT:
+                    interfacePortPair['HTTP inbound'].port = item
+                    validatePortNumber(item.value, currLineId, item.valueStartCol, errors)
+                    break
                 case facts.SETTING_SOCKS_PORT:
+                    interfacePortPair['SOCKS5 inbound'].port = item
+                    validatePortNumber(item.value, currLineId, item.valueStartCol, errors)
+                    break
                 case facts.SETTING_API_PORT:
+                    interfacePortPair['Leaf control API'].port = item
                     validatePortNumber(item.value, currLineId, item.valueStartCol, errors)
                     break
                 default:
@@ -235,6 +289,34 @@ function validateGeneral(
                         message: `Unknown setting entry "${item.key}".`,
                     })
             }
+        }
+    }
+    for (const [itemName, { iface, port }] of Object.entries(interfacePortPair)) {
+        if (
+            (iface === undefined && port === undefined)
+            || (iface !== undefined && port !== undefined)
+        ) {
+            continue
+        }
+        if (iface !== undefined) {
+            errors.push({
+                severity: monaco.MarkerSeverity.Error,
+                startLineNumber: iface.lineId,
+                startColumn: iface.keyStartCol,
+                endLineNumber: iface.lineId,
+                endColumn: iface.keyStartCol + iface.key.length,
+                message: `To enable ${itemName}, "${iface.key.replace('interface', 'port')}" must be specified.`,
+            })
+        }
+        if (port !== undefined) {
+            errors.push({
+                severity: monaco.MarkerSeverity.Error,
+                startLineNumber: port.lineId,
+                startColumn: port.keyStartCol,
+                endLineNumber: port.lineId,
+                endColumn: port.keyStartCol + port.key.length,
+                message: `To enable ${itemName}, "${port.key.replace('port', 'interface')}" must be specified.`,
+            })
         }
     }
 }
@@ -336,6 +418,7 @@ function validateProxyItem(
             case facts.PROXY_PROPERTY_KEY_WS_HOST:
             case facts.PROXY_PROPERTY_KEY_TLS_CERT: // TODO: check cert
             case facts.PROXY_PROPERTY_KEY_SNI:
+                validateNonEmpty(kv.value, item.lineId, kv.valueStartCol, errors)
                 break
             case facts.PROXY_PROPERTY_KEY_WS:
             case facts.PROXY_PROPERTY_KEY_TLS:
@@ -348,6 +431,7 @@ function validateProxyItem(
                 validateI32(kv.value, item.lineId, kv.valueStartCol, errors)
                 break
             case facts.PROXY_PROPERTY_KEY_INTERFACE:
+                validateNonEmpty(kv.value, item.lineId, kv.valueStartCol, errors)
                 continue
             default:
                 isUnknownKey = true
@@ -864,17 +948,7 @@ function validateRules(
                     case facts.RULE_TYPE_DOMAIN_KEYWORD:
                     // TODO: validate domain keyword
                     case facts.RULE_TYPE_GEOIP:
-                        if (ruleItem.text === '') {
-                            errors.push({
-                                severity: monaco.MarkerSeverity.Error,
-                                startLineNumber: currLineId,
-                                startColumn: ruleItem.startCol,
-                                endLineNumber: currLineId,
-                                endColumn: ruleItem.startCol + ruleItem.text.length,
-                                message: `Expected non-empty string.`,
-                            })
-                            continue
-                        }
+                        validateNonEmpty(ruleItem.text, currLineId, ruleItem.startCol, errors)
                         break
                     case facts.RULE_TYPE_EXTERNAL:
                         {
@@ -1016,6 +1090,7 @@ function validateRules(
                         break
                     case facts.RULE_TYPE_INBOUND_TAG:
                         // ???
+                        validateNonEmpty(ruleItem.text, currLineId, ruleItem.startCol, errors)
                         break
                     default:
                         break
@@ -1084,6 +1159,8 @@ function validateHost(
                     }],
                 })
             }
+
+            validateNonEmpty(item.key, currLineId, item.keyStartCol, errors)
 
             errors.push(...splitByComma(item.value, item.valueStartCol)
                 .filter(s => !isValidIpAddr(s.text))
