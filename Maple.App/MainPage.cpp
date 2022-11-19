@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "MainPage.h"
 #include "MainPage.g.cpp"
 #include <filesystem>
@@ -358,7 +358,7 @@ namespace winrt::Maple_App::implementation
         }
         if (targetPage.Name != xaml_typename<MonacoEditPage>().Name)
         {
-        MainContentFrame().BackStack().Clear();
+            MainContentFrame().BackStack().Clear();
         }
         MainContentFrame().Navigate(targetPage, item);
     }

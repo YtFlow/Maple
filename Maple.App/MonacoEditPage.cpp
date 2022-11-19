@@ -30,13 +30,12 @@ namespace winrt::Maple_App::implementation
     IAsyncAction MonacoEditPage::initializeWebView() {
         auto const lifetime{ get_strong() };
         auto const webview = WebView();
-        co_await webview.EnsureCoreWebView2Async();
-        if (std::exchange(m_webviewInitialized, true))
+        if (m_webviewState != MonacoEditPageWebViewState::Uninitialized)
         {
             co_return;
         }
-        auto const packagePath = Windows::ApplicationModel::Package::Current().InstalledPath();
-        auto const configPath = Windows::Storage::ApplicationData::Current().LocalFolder().Path() + L"\\config";
+        m_webviewState = MonacoEditPageWebViewState::AwaitingEditorReady;
+        co_await webview.EnsureCoreWebView2Async();
         webview.CoreWebView2().SetVirtualHostNameToFolderMapping(
             L"maple-monaco-editor-app-root.com",
             packagePath,
@@ -53,40 +52,29 @@ namespace winrt::Maple_App::implementation
     fire_and_forget MonacoEditPage::OnNavigatedTo(NavigationEventArgs const& e) {
         auto const lifetime{ get_strong() };
         auto const param = e.Parameter().as<Maple_App::ConfigViewModel>();
-        co_await initializeWebView();
-        SaveModifiedContent = [weak = weak_ref{ lifetime }]()->IAsyncAction
+        hstring fileName;
+        try
         {
-            if (auto const lifetime{ weak.get() })
-            {
-                lifetime->WebView().ExecuteScriptAsync(hstring{ L"window.mapleHostApi.triggerSave()" });
-            }
-            co_return;
-        };
-
-        if (m_webviewDOMLoaded)
-        {
-            co_await lifetime->WebView().ExecuteScriptAsync(hstring{ L"window.mapleHostApi.loadFile(`http://maple-monaco-editor-config-root.com/" } +
-                param.File().Name() +
-                L"`)");
+            fileName = param.File().Name();
         }
-        else {
-            if (!m_webviewDOMLoadedToken) {
-                m_webviewDOMLoadedToken = WebView().CoreWebView2().DOMContentLoaded([=](auto, auto)
-                    {
-                        lifetime->m_webviewDOMLoaded = true;
-                        lifetime->WebView().CoreWebView2().DOMContentLoaded(lifetime->m_webviewDOMLoadedToken);
-                        lifetime->WebView().ExecuteScriptAsync(hstring{ L"window.mapleHostApi.loadFile(`" } +
-                            CONFIG_ROOT_VIRTUAL_HOSTW +
-                            lifetime->m_initialFileName +
-                            L"`)");
-                        lifetime->WebView().WebMessageReceived([](auto const&, auto const& args)
-                            {
-                                auto const json{ args.WebMessageAsJson() };
-                                handleEvent(json);
-                            });
-                    });
-            }
-            m_initialFileName = param.File().Name();
+        catch (...) {}
+        if (fileName == L"")
+        {
+            co_return;
+        }
+        m_currentFileName = fileName;
+        switch (m_webviewState)
+        {
+        case MonacoEditPageWebViewState::Uninitialized:
+            co_await initializeWebView();
+            break;
+        case MonacoEditPageWebViewState::AwaitingEditorReady:
+            break;
+        case MonacoEditPageWebViewState::EditorReady:
+            co_await lifetime->WebView().ExecuteScriptAsync(hstring{ L"window.mapleHostApi.loadFile(`http://maple-monaco-editor-config-root.com/" } +
+                fileName +
+                L"`)");
+            break;
         }
     }
 
@@ -98,15 +86,55 @@ namespace winrt::Maple_App::implementation
         co_return;
     }
 
-    IAsyncAction MonacoEditPage::handleEvent(hstring const& eventJson)
+    fire_and_forget MonacoEditPage::WebView_WebMessageReceived(
+        MUXC::WebView2 const& sender,
+        CoreWebView2WebMessageReceivedEventArgs const& args
+    )
     {
+        auto const lifetime{ get_strong() };
         nlohmann::json doc;
+        bool hasError{};
         try {
-            doc = nlohmann::json::parse(to_string(eventJson));
+            doc = nlohmann::json::parse(to_string(args.WebMessageAsJson()));
         }
-        catch (...) {}
+        catch (...)
+        {
+            hasError = true;
+        }
+        if (hasError)
+        {
+            co_return;
+        }
 
-        if (doc["cmd"] == "save")
+        std::string const& cmd = doc["cmd"];
+        if (cmd == "editorReady")
+        {
+            m_webviewState = MonacoEditPageWebViewState::EditorReady;
+            co_await WebView().ExecuteScriptAsync(hstring{ L"window.mapleHostApi.loadFile(`" } +
+                CONFIG_ROOT_VIRTUAL_HOSTW +
+                m_currentFileName +
+                L"`)");
+            SaveModifiedContent = [weak = weak_ref{ lifetime }]()->IAsyncAction
+            {
+                if (auto const lifetime{ weak.get() })
+                {
+                    struct awaiter : std::suspend_always
+                    {
+                        void await_suspend(
+                            std::coroutine_handle<> handle)
+                        {
+                            lifetime->m_fileSaveHandle = handle;
+                        }
+
+                        com_ptr<MonacoEditPage> lifetime;
+                    };
+                    lifetime->WebView().ExecuteScriptAsync(hstring{ L"window.mapleHostApi.requestSaveCurrent()" });
+                    co_await awaiter{ .lifetime = lifetime };
+                }
+                co_return;
+            };
+        }
+        else if (cmd == "save")
         {
             try {
                 auto const configDir{ co_await ApplicationData::Current().LocalFolder().CreateFolderAsync(L"config", CreationCollisionOption::OpenIfExists) };
@@ -124,7 +152,14 @@ namespace winrt::Maple_App::implementation
                     });
             }
             catch (...) {}
+            co_await resume_foreground(Dispatcher());
+            if (auto const fileSaveHandle{ std::exchange(m_fileSaveHandle, nullptr) }) {
+                fileSaveHandle();
+            }
         }
         co_return;
+
     }
+
 }
+

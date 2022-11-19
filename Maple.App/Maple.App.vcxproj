@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\Microsoft.Windows.CppWinRT.2.0.220929.3\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.220929.3\build\native\Microsoft.Windows.CppWinRT.props')" />
   <Import Project="..\packages\Microsoft.UI.Xaml.2.8.1\build\native\Microsoft.UI.Xaml.props" Condition="Exists('..\packages\Microsoft.UI.Xaml.2.8.1\build\native\Microsoft.UI.Xaml.props')" />
@@ -363,7 +363,11 @@
       <DestinationFolders>$(OutDir)/Config</DestinationFolders>
     </CopyFileToFolders>
     <None Include="Maple.App_TemporaryKey.pfx" />
-    <_WildCardCopyFileToFolders Include="MonacoEditor\dist\*" />
+    <_WildCardCopyFileToFolders Include="MonacoEditor\dist\editor*.js" />
+    <_WildCardCopyFileToFolders Include="MonacoEditor\dist\editor.html" />
+    <_WildCardCopyFileToFolders Include="MonacoEditor\dist\json*.js" />
+    <_WildCardCopyFileToFolders Include="MonacoEditor\dist\*.css" />
+    <_WildCardCopyFileToFolders Include="MonacoEditor\dist\*.ttf" />
     <None Include="packages.config" />
     <None Include="PropertySheet.props" />
   </ItemGroup>

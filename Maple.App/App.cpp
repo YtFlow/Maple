@@ -122,7 +122,7 @@ fire_and_forget App::OnSuspending([[maybe_unused]] IInspectable const& sender, [
     // Save application state and stop any background activity
     const auto& saveModifiedContent = EditPage::SaveModifiedContent;
     const auto& saveMonacoModifiedContent = MonacoEditPage::SaveModifiedContent;
-    if (saveModifiedContent == nullptr && saveMonacoModifiedContent) {
+    if (saveModifiedContent == nullptr && saveMonacoModifiedContent == nullptr) {
         co_return;
     }
 
@@ -133,7 +133,6 @@ fire_and_forget App::OnSuspending([[maybe_unused]] IInspectable const& sender, [
     if (saveMonacoModifiedContent != nullptr)
     {
         co_await saveMonacoModifiedContent();
-        co_await 1500ms;
     }
     def.Complete();
 }

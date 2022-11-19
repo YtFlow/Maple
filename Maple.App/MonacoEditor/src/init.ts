@@ -6,13 +6,14 @@ import { validateModel } from './validate'
 import { definitionProvider } from './definition'
 import { referenceProvider, renameProvider } from './reference'
 import { hoverProvider } from './hover'
+import { reportEditorReady, saveFile } from './rpc'
+import { Mutex } from './mutex'
 
 declare global {
     interface Window {
-        pendingLoadFile: string | undefined
         mapleHostApi: {
-            loadFile: (path: string) => void
-            triggerSave: () => void
+            loadFile: (url: string) => void
+            requestSaveCurrent: () => void
         }
         MonacoEnvironment?: monaco.Environment | undefined,
         chrome: {
@@ -21,18 +22,6 @@ declare global {
             }
         }
     }
-}
-
-function webviewInitPrelude() {
-    window.pendingLoadFile = undefined;
-    window.mapleHostApi = {
-        loadFile(url) {
-            console.log('pending loader triggered')
-            window.pendingLoadFile = url
-        },
-        triggerSave() { }
-    }
-    console.log('pending loader injected')
 }
 
 function initLang() {
@@ -58,7 +47,7 @@ function initLang() {
     const editor = monaco.editor.create(document.getElementById('container')!, {
         wordBasedSuggestions: false,
     })
-    const editorStates = new Map()
+    const editorStates: Map<string, monaco.editor.ICodeEditorViewState> = new Map()
 
     window.addEventListener('resize', _ => {
         window.requestAnimationFrame(() => {
@@ -66,72 +55,76 @@ function initLang() {
         })
     })
 
-    let currentFile = ''
-    async function loadFile(url) {
-        triggerSave()
+    let currentFileLock = new Mutex('')
+    async function loadFile(url: string) {
+        requestSaveCurrent()
+        await currentFileLock.withLock((currentFile, setCurrentFile) => {
+            return loadFileInner(url, currentFile, setCurrentFile)
+        })
+    }
+    async function loadFileInner(url: string, currentFile: string, setCurrentFile: (f: string) => void) {
         if (currentFile) {
-            editorStates.set(currentFile, editor.saveViewState())
+            const state = editor.saveViewState()
+            if (state) {
+                editorStates.set(currentFile, state)
+            }
         }
 
         // FIXME: destroy previous model?
         const parsedUri = monaco.Uri.parse(url)
         let maybeModel = monaco.editor.getModel(parsedUri)
-        do {
-            if (maybeModel) {
-                editor.setModel(maybeModel)
-                editor.restoreViewState(editorStates.get(url))
-            } else {
-                const res = await fetch(url)
-                const text = await res.text()
-                // Race condition
-                maybeModel = monaco.editor.getModel(parsedUri)
-                if (maybeModel) {
-                    continue
-                }
+        if (maybeModel) {
+            editor.setModel(maybeModel)
+            const state = editorStates.get(url)
+            if (state) {
+                editor.restoreViewState(state)
+            }
+        } else {
+            const res = await fetch(url)
+            const text = await res.text()
 
-                let model: monaco.editor.ITextModel
-                if (url.endsWith('.json')) {
-                    model = monaco.editor.createModel(text, 'json', parsedUri)
-                } else {
-                    model = monaco.editor.createModel(text, 'leafConf', parsedUri)
-                }
-                editor.setModel(model)
+            let model: monaco.editor.ITextModel
+            if (url.endsWith('.json')) {
+                model = monaco.editor.createModel(text, 'json', parsedUri)
+            } else {
+                model = monaco.editor.createModel(text, 'leafConf', parsedUri)
                 validateModel(model)
                 model.onDidChangeContent(() => validateModel(model))
-                console.log('loaded url: ' + url)
             }
-        } while (false)
-        currentFile = url
-    }
-    function triggerSave() {
-        if (!currentFile) {
-            return
+            editor.setModel(model)
+            console.log('loaded url: ' + url)
         }
-        const text = editor.getValue()
-
-        window.chrome.webview.postMessage({
-            cmd: 'save',
-            path: currentFile,
-            text,
+        setCurrentFile(url)
+    }
+    function getCurrent(): Promise<{ url: string, text: string } | undefined> {
+        return currentFileLock.withLock((currentFile, _) => {
+            if (!currentFile) {
+                return
+            }
+            const text = editor.getValue()
+            return { url: currentFile, text }
         })
     }
-    window.mapleHostApi.loadFile = loadFile
-    window.mapleHostApi.triggerSave = triggerSave
-
-    if (window.pendingLoadFile) {
-        loadFile(window.pendingLoadFile)
+    async function requestSaveCurrent() {
+        const current = await getCurrent()
+        if (current === undefined) {
+            return
+        }
+        saveFile(current.url, current.text)
     }
+    window.mapleHostApi = { loadFile, requestSaveCurrent }
+
     window.addEventListener('focusout', () => {
-        triggerSave()
+        requestSaveCurrent()
     })
 
     editor.addAction({
         id: 'save-action',
         label: 'Save Current File',
         keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
-        run: () => void triggerSave(),
+        run: () => requestSaveCurrent(),
     })
 }
 
-webviewInitPrelude()
 initLang()
+reportEditorReady()

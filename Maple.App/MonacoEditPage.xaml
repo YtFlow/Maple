@@ -12,6 +12,6 @@
     NavigationCacheMode="Required">
 
     <Grid>
-        <muxc:WebView2 x:Name="WebView" />
+        <muxc:WebView2 x:Name="WebView" WebMessageReceived="WebView_WebMessageReceived" />
     </Grid>
 </Page>
