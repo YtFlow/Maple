@@ -49,8 +49,8 @@ export const GENERAL_SETTING_KEYS: IGeneralSettingDef[] = [
     { name: SETTING_LOGOUTPUT, desc: 'Path to the log file.', kind: 'other' },
     { name: SETTING_DNS_SERVER, desc: 'A comma separated list of DNS servers.', kind: 'other' },
     { name: SETTING_DNS_INTERFACE, desc: 'Specify on which interface DNS requests will be routed.', kind: 'interface' },
-    { name: SETTING_ALWAYS_REAL_IP, desc: 'A comma separated list of domain names that will always be resolved to real IP addresses.\n\nThis option conflicts with `' + SETTING_ALWAYS_FAKE_IP + '`', kind: 'other' },
-    { name: SETTING_ALWAYS_FAKE_IP, desc: 'A comma separated list of domain names that will always be resolved to fake IP addresses.\n\nThis option conflicts with `' + SETTING_ALWAYS_REAL_IP + '`', kind: 'other' },
+    { name: SETTING_ALWAYS_REAL_IP, desc: 'A comma separated list of domain name keywords that will always be resolved to real IP addresses.\n\nThis option conflicts with `' + SETTING_ALWAYS_FAKE_IP + '`', kind: 'other' },
+    { name: SETTING_ALWAYS_FAKE_IP, desc: 'A comma separated list of domain name keywords that will always be resolved to fake IP addresses.\n\nThis option conflicts with `' + SETTING_ALWAYS_REAL_IP + '`', kind: 'other' },
     { name: SETTING_ROUTING_DOMAIN_RESOLVE, desc: 'Specify whether Leaf should resolve IP addresses for routing.\n\nFor `GEOIP` and `IP-CIDR` rules to match domain name requests, this should be enabled.', kind: 'other' },
     { name: SETTING_HTTP_INTERFACE, desc: 'Specify on which interface HTTP inbound will be listening on.', kind: 'interface' },
     { name: SETTING_INTERFACE, desc: 'Specify on which interface HTTP inbound will be listening on.\n\nAlias for `' + SETTING_HTTP_INTERFACE + '`.', kind: 'interface' },
@@ -131,8 +131,8 @@ export const PROXY_PROPERTY_KEYS_DESC_MAP = new Map([
     [PROXY_PROPERTY_KEY_SNI, 'Server name (SNI), or host name for TLS transport.'],
     [PROXY_PROPERTY_KEY_QUIC, 'Specify whether QUIC transport should be enabled.'],
     [PROXY_PROPERTY_KEY_AMUX, 'Specify whether AMUX transport should be enabled.'],
-    [PROXY_PROPERTY_KEY_AMUX_MAX, 'Maximum number of connections per AMUX session.'],
-    [PROXY_PROPERTY_KEY_AMUX_CON, 'Maximum number of streams per AMUX session.'],
+    [PROXY_PROPERTY_KEY_AMUX_MAX, 'Maximum number of streams per AMUX session.'],
+    [PROXY_PROPERTY_KEY_AMUX_CON, 'Maximum number of concurrent connections per AMUX session.'],
     [PROXY_PROPERTY_KEY_INTERFACE, 'Specify the interface proxy requests should bind to.'],
 ])
 
@@ -209,17 +209,6 @@ export interface IProxyGroupDef {
     snippet: string,
 }
 
-export const GROUP_TYPES: IProxyGroupDef[] = [
-    { name: GROUP_TYPE_CHAIN, desc: '', snippet: 'chain, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
-    { name: GROUP_TYPE_TRYALL, desc: '', snippet: 'tryall, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
-    { name: GROUP_TYPE_STATIC, desc: '', snippet: 'static, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
-    { name: GROUP_TYPE_FAILOVER, desc: '', snippet: 'failover, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}, health-check=${4|true,false|}, check-interval=${5:600}, fail-timeout=${6:5}, failover=${7|true,false|}' },
-    { name: GROUP_TYPE_FALLBACK, desc: '', snippet: 'fallback, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}, check-interval=${4:600}, fail-timeout=${5:5}' },
-    { name: GROUP_TYPE_FAILOVER_URL_TEST, desc: '', snippet: 'url-test, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}, check-interval=${4:600}, fail-timeout=${5:5}' },
-    { name: GROUP_TYPE_SELECT, desc: '', snippet: 'select, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
-]
-export const GROUP_TYPES_MAP: Map<string, IProxyGroupDef> = new Map(GROUP_TYPES.map(g => [g.name, g]))
-
 export const GROUP_PROPERTY_KEY_DELAY_BASE = 'delay-base'
 export const GROUP_PROPERTY_KEY_METHOD = 'method'
 export const GROUP_PROPERTY_KEY_FAIL_TIMEOUT = 'fail-timeout'
@@ -235,19 +224,19 @@ export const GROUP_PROPERTY_KEY_CACHE_TIMEOUT = 'cache-timeout'
 export const GROUP_PROPERTY_KEY_LAST_RESORT = 'last-resort'
 
 export const GROUP_PROPERTY_KEYS_DESC_MAP = new Map([
-    [GROUP_PROPERTY_KEY_DELAY_BASE, ''],
-    [GROUP_PROPERTY_KEY_METHOD, ''],
-    [GROUP_PROPERTY_KEY_FAIL_TIMEOUT, ''],
-    [GROUP_PROPERTY_KEY_HEALTH_CHECK, ''],
-    [GROUP_PROPERTY_KEY_HEALTH_CHECK_TIMEOUT, ''],
-    [GROUP_PROPERTY_KEY_HEALTH_CHECK_DELAY, ''],
-    [GROUP_PROPERTY_KEY_HEALTH_CHECK_ACTIVE, ''],
-    [GROUP_PROPERTY_KEY_CHECK_INTERVAL, ''],
-    [GROUP_PROPERTY_KEY_FAILOVER, ''],
-    [GROUP_PROPERTY_KEY_FALLBACK_CACHE, ''],
-    [GROUP_PROPERTY_KEY_CACHE_SIZE, ''],
-    [GROUP_PROPERTY_KEY_CACHE_TIMEOUT, ''],
-    [GROUP_PROPERTY_KEY_LAST_RESORT, ''],
+    [GROUP_PROPERTY_KEY_DELAY_BASE, 'Specify the interval before starting the next connection attempt when all previous attemps are pending.'],
+    [GROUP_PROPERTY_KEY_METHOD, 'Selection method.\n\n`random`: Randomly choose an actor for each request.\n\n`random-once`: Randomly choose an actor when Leaf starts.\n\n`rr`: Round-robin.'],
+    [GROUP_PROPERTY_KEY_FAIL_TIMEOUT, 'Timeout for an actor to establish a connection, including TCP handshake and TLS handshake and protocol-specific initialization.'],
+    [GROUP_PROPERTY_KEY_HEALTH_CHECK, 'Specify whether a health check should be performed periodically to measure latencies of the actors.'],
+    [GROUP_PROPERTY_KEY_HEALTH_CHECK_TIMEOUT, 'Timeout for an actor to establish a connection during a health check, including TCP handshake and TLS handshake and protocol-specific initialization.'],
+    [GROUP_PROPERTY_KEY_HEALTH_CHECK_DELAY, 'Delay before starting a health check.'],
+    [GROUP_PROPERTY_KEY_HEALTH_CHECK_ACTIVE, 'Specify the interval where health checks are skipped if there is no new connections.'],
+    [GROUP_PROPERTY_KEY_CHECK_INTERVAL, 'Specify the interval between health checks.'],
+    [GROUP_PROPERTY_KEY_FAILOVER, 'Specify whether to switch to the next actor when the current actor fails.'],
+    [GROUP_PROPERTY_KEY_FALLBACK_CACHE, 'Specify whether previous succeeded actors should be cached for future connections.'],
+    [GROUP_PROPERTY_KEY_CACHE_SIZE, 'Maximum number of actors to cache.'],
+    [GROUP_PROPERTY_KEY_CACHE_TIMEOUT, 'Cache timeout in **minutes**.'],
+    [GROUP_PROPERTY_KEY_LAST_RESORT, 'Specify the actor to use when all actors in the list fail.'],
 ])
 
 export const GROUP_METHOD_RANDOM = 'random'
@@ -256,6 +245,17 @@ export const GROUP_METHOD_ROUND_ROBIN = 'rr'
 
 export const KNOWN_GROUP_METHODS = [GROUP_METHOD_RANDOM, GROUP_METHOD_RANDOM_ONCE, GROUP_METHOD_ROUND_ROBIN]
 export const KNOWN_GROUP_METHODS_SET = new Set(KNOWN_GROUP_METHODS)
+
+export const GROUP_TYPES: IProxyGroupDef[] = [
+    { name: GROUP_TYPE_CHAIN, desc: 'Chaining proxies.', snippet: 'chain, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
+    { name: GROUP_TYPE_TRYALL, desc: 'Concurrently initiate connection attempts to all proxies in order with an optional delay.', snippet: 'tryall, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
+    { name: GROUP_TYPE_STATIC, desc: 'Select a proxy from the list by random or round robin.', snippet: 'static, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
+    { name: GROUP_TYPE_FAILOVER, desc: 'Try all proxies one-by-one until success. Periodic health checks are performed in background to monitor the status of the proxies.', snippet: 'failover, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}, health-check=${4|true,false|}, check-interval=${5:600}, fail-timeout=${6:5}, failover=${7|true,false|}' },
+    { name: GROUP_TYPE_FALLBACK, desc: 'Try all proxies one-by-one until success. Periodic health checks are performed in background to monitor the status of the proxies.\n\nAlias for `' + GROUP_TYPE_FAILOVER + '`.', snippet: 'fallback, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}, check-interval=${4:600}, fail-timeout=${5:5}' },
+    { name: GROUP_TYPE_FAILOVER_URL_TEST, desc: 'Select the best proxy from periodic health checks.\n\nEquivalent to `' + GROUP_TYPE_FAILOVER + '` with `' + GROUP_PROPERTY_KEY_FAILOVER + '`=`false`.', snippet: 'url-test, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}, check-interval=${4:600}, fail-timeout=${5:5}' },
+    { name: GROUP_TYPE_SELECT, desc: 'Select a proxy through Leaf control API.', snippet: 'select, ${1:proxy1}, ${2:proxy2}, ${3:proxy3}' },
+]
+export const GROUP_TYPES_MAP: Map<string, IProxyGroupDef> = new Map(GROUP_TYPES.map(g => [g.name, g]))
 
 export const PROXY_GROUP_PROPERTY_KEY_MAP: Record<string, IProxyPropertyKeyDef> = {
     [GROUP_TYPE_CHAIN]: { required: new Set(), allowed: new Set() },
@@ -332,7 +332,7 @@ export const RULE_TYPES: IRuleTypeDef[] = [
     { name: RULE_TYPE_DOMAIN_SUFFIX, desc: 'Match connections with destination domain names that end with the specified string.', snippet: 'DOMAIN-SUFFIX, ${1:example.com}, ${2:proxy}' },
     { name: RULE_TYPE_DOMAIN_KEYWORD, desc: 'Match connections with destination domain names that contain the specified keyword.', snippet: 'DOMAIN-KEYWORD, ${1:keyword}, ${2:proxy}' },
     { name: RULE_TYPE_GEOIP, desc: 'Match connections with destination IP addresses located within the specified country.\n\nMake sure a valid GeoIP database file `geo.mmdb` exists in the configuration folder.\n\nTo match domain name requests, enable `' + SETTING_ROUTING_DOMAIN_RESOLVE + '` in General section.', snippet: 'GEOIP, ${1:us}, ${2:proxy}' },
-    { name: RULE_TYPE_EXTERNAL, desc: 'Match connections using an external GeoIP or V2Ray geosite database file.\n\nV2Ray geosite: `site:<file>:<group>` or `site:<group>` with database file default to "site.dat".\n\nGeoIP: `mmdb:<country code>`. Make sure a valid GeoIP database file `geo.mmdb` exists in the configuration folder.', snippet: 'EXTERNAL, ${1|site:geolocation-cn,site:geosite.dat:category-ads-all,mmdb:cn|}, ${2:proxy}' },
+    { name: RULE_TYPE_EXTERNAL, desc: 'Match connections using an external GeoIP or V2Ray geosite database file.\n\nV2Ray geosite: `site:<file>:<group>` or `site:<group>` with database file default to "site.dat".\n\nGeoIP: `mmdb:<country code>`. Make sure a valid GeoIP database file `geo.mmdb` exists in the configuration folder.', snippet: 'EXTERNAL, ${1|site:geolocation-cn,site:geosite.dat:category-ads-all,mmdb:cn,mmdb:geo.mmdb:cn|}, ${2:proxy}' },
     { name: RULE_TYPE_PORT_RANGE, desc: 'Match connections with destination ports within the range.\n\nThe port range is specified by a lower bound and a upper bound, separated by a dash ("`").', snippet: 'PORT-RANGE, ${1:8000-9000}, ${2:proxy}' },
     { name: RULE_TYPE_NETWORK, desc: 'Match TCP or UDP requests.', snippet: 'NETWORK, ${1|TCP,UDP|}, ${2:proxy}' },
     { name: RULE_TYPE_INBOUND_TAG, desc: 'Match connections with the specified inbound tag.', snippet: 'INBOUND-TAG, ${1:inbound-tag}, ${2:proxy}' },

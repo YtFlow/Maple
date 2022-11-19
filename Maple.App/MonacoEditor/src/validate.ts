@@ -475,6 +475,7 @@ function validateProxyGroupItem(
     }
     const argsWithKv = args.slice(firstKvArgId)
     const visitedKvs: Map<string, ILeafConfKvItem> = new Map()
+    const lastResortSegs: ILeafConfTextSpan[] = []
     const requiredVisited = new Map([...typeKeyDef.required].map(k => [k, false]))
     for (const arg of argsWithKv) {
         const kv = parseKvLine(arg.text, item.lineId, arg.startCol)
@@ -543,6 +544,10 @@ function validateProxyGroupItem(
                 validateI32(kv.value, item.lineId, kv.valueStartCol, errors)
                 break
             case facts.GROUP_PROPERTY_KEY_LAST_RESORT:
+                lastResortSegs.push({
+                    text: kv.value,
+                    startCol: kv.valueStartCol,
+                })
                 break
             case facts.GROUP_PROPERTY_KEY_METHOD:
                 if (!facts.KNOWN_GROUP_METHODS_SET.has(kv.value)) {
@@ -593,8 +598,8 @@ function validateProxyGroupItem(
         }
     }
 
-    const argsWithoutKv = args.slice(1, firstKvArgId)
-    if (argsWithoutKv.length === 0) {
+    const actorSegs = args.slice(1, firstKvArgId).concat(lastResortSegs)
+    if (actorSegs.length === 0) {
         errors.push({
             severity: monaco.MarkerSeverity.Error,
             startLineNumber: item.lineId,
@@ -604,7 +609,7 @@ function validateProxyGroupItem(
             message: `A proxy group must have at least one actor.`,
         })
     }
-    for (const arg of argsWithoutKv) {
+    for (const arg of actorSegs) {
         if (arg.text === '') {
             errors.push({
                 severity: monaco.MarkerSeverity.Error,
@@ -884,7 +889,7 @@ function validateRules(
                                 })
                                 continue
                             }
-                            const segs = ruleItem.text.split(':')
+                            const segs = ruleItem.text.split(':').map(s => s.trim())
                             if (segs.length < 2) {
                                 errors.push({
                                     severity: monaco.MarkerSeverity.Error,
@@ -896,18 +901,33 @@ function validateRules(
                                 })
                                 continue
                             }
+                            if (segs.length > 3) {
+                                errors.push({
+                                    severity: monaco.MarkerSeverity.Error,
+                                    startLineNumber: currLineId,
+                                    startColumn: ruleItem.startCol,
+                                    endLineNumber: currLineId,
+                                    endColumn: ruleItem.startCol + ruleItem.text.length,
+                                    message: `An external site rule cannot have more than three components.`,
+                                })
+                            }
+
                             if (segs[0] === facts.RULE_EXTERNAL_SOURCE_MMDB) {
+                                let codeSegId = 1
                                 if (segs.length > 2) {
-                                    errors.push({
-                                        severity: monaco.MarkerSeverity.Error,
-                                        startLineNumber: currLineId,
-                                        startColumn: ruleItem.startCol,
-                                        endLineNumber: currLineId,
-                                        endColumn: ruleItem.startCol + ruleItem.text.length,
-                                        message: `An external MMDB rule cannot have more than two components.`,
-                                    })
+                                    codeSegId = 2
+                                    if (segs[1] === '') {
+                                        errors.push({
+                                            severity: monaco.MarkerSeverity.Error,
+                                            startLineNumber: currLineId,
+                                            startColumn: ruleItem.startCol,
+                                            endLineNumber: currLineId,
+                                            endColumn: ruleItem.startCol + ruleItem.text.length,
+                                            message: `Empty GeoIP database file name.`,
+                                        })
+                                    }
                                 }
-                                if (segs[1] === '') {
+                                if (segs[codeSegId] === '') {
                                     errors.push({
                                         severity: monaco.MarkerSeverity.Error,
                                         startLineNumber: currLineId,
@@ -918,17 +938,10 @@ function validateRules(
                                     })
                                 }
                             } else if (segs[0] === facts.RULE_EXTERNAL_SOURCE_SITE) {
-                                if (segs.length > 3) {
-                                    errors.push({
-                                        severity: monaco.MarkerSeverity.Error,
-                                        startLineNumber: currLineId,
-                                        startColumn: ruleItem.startCol,
-                                        endLineNumber: currLineId,
-                                        endColumn: ruleItem.startCol + ruleItem.text.length,
-                                        message: `An external site rule cannot have more than three components.`,
-                                    })
-                                }
-                                if (segs.length === 3 && segs[1] === '') {
+                                let groupSegId = 1
+                                if (segs.length > 2 && segs[1] === '') {
+                                    groupSegId = 2
+                                    if (segs[1] === '') {
                                     errors.push({
                                         severity: monaco.MarkerSeverity.Error,
                                         startLineNumber: currLineId,
@@ -938,7 +951,8 @@ function validateRules(
                                         message: `An external site rule must have a non-empty database file name.`,
                                     })
                                 }
-                                if (segs.length === 2 && segs[1] === '' || segs.length === 3 && segs[2] === '') {
+                                }
+                                if (segs[groupSegId] === '') {
                                     errors.push({
                                         severity: monaco.MarkerSeverity.Error,
                                         startLineNumber: currLineId,
@@ -955,7 +969,7 @@ function validateRules(
                                     startColumn: ruleItem.startCol,
                                     endLineNumber: currLineId,
                                     endColumn: ruleItem.startCol + ruleItem.text.length,
-                                    message: `Unknown external rule source "${segs[0]}".`,
+                                    message: `Unknown external rule source "${segs[0]}". ${facts.RULE_EXTERNAL_SOURCE_MMDB} or ${facts.RULE_EXTERNAL_SOURCE_SITE} expected.`,
                                 })
                             }
                         }

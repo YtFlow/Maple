@@ -39,6 +39,22 @@ function findProxyOrGroupReferenceLocations(
                     range: new monaco.Range(kv.lineId, kv.keyStartCol, kv.lineId, kv.keyStartCol + kv.key.length),
                 })
             }
+            for (const arg of args
+                .map(a => parseKvLine(a.text, kv.lineId, a.startCol))
+                .filter((kv): kv is ILeafConfKvItem =>
+                    kv?.key === facts.GROUP_PROPERTY_KEY_LAST_RESORT
+                    && kv.value === targetName)
+            ) {
+                ret.push({
+                    uri: model.uri,
+                    range: new monaco.Range(
+                        arg.lineId,
+                        arg.valueStartCol,
+                        arg.lineId,
+                        arg.valueStartCol + arg.value.length,
+                    ),
+                })
+            }
             return ret
         })
     const ruleLocations = struct.sections.filter(s => s.sectionName === facts.SECTION_RULE)

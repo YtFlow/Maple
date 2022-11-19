@@ -260,24 +260,35 @@ function provideProxyGroupHover(
             currentArg.startCol + currentArg.text.length,
         ))
     }
-    if (colId < argKv.keyStartCol || colId > argKv.keyStartCol + argKv.key.length) {
+    if (colId < argKv.keyStartCol) {
         return undefined
     }
-    const desc = facts.GROUP_PROPERTY_KEYS_DESC_MAP.get(argKv.key)
-    if (desc === undefined) {
+    if (colId < argKv.valueStartCol) {
+        const desc = facts.GROUP_PROPERTY_KEYS_DESC_MAP.get(argKv.key)
+        if (desc === undefined) {
+            return {
+                range: new monaco.Range(lineId, argKv.keyStartCol, lineId, argKv.keyStartCol + argKv.key.length),
+                contents: [
+                    { value: '(property) ' + argKv.key },
+                ],
+            }
+        }
         return {
             range: new monaco.Range(lineId, argKv.keyStartCol, lineId, argKv.keyStartCol + argKv.key.length),
             contents: [
                 { value: '(property) ' + argKv.key },
+                { value: desc },
             ],
         }
-    }
-    return {
-        range: new monaco.Range(lineId, argKv.keyStartCol, lineId, argKv.keyStartCol + argKv.key.length),
-        contents: [
-            { value: '(property) ' + argKv.key },
-            { value: desc },
-        ],
+    } else if (argKv.key === facts.GROUP_PROPERTY_KEY_LAST_RESORT) {
+        return provideProxyOrGroupNameHover(model, struct, argKv.value, new monaco.Range(
+            lineId,
+            argKv.valueStartCol,
+            lineId,
+            argKv.valueStartCol + argKv.value.length,
+        ))
+    } else {
+        return undefined
     }
 }
 

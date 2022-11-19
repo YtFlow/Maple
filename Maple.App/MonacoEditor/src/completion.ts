@@ -325,6 +325,8 @@ function completeProxyGroup(
             case facts.GROUP_PROPERTY_KEY_FALLBACK_CACHE:
             case facts.GROUP_PROPERTY_KEY_HEALTH_CHECK:
                 return generateBoolCandidates(range)
+            case facts.GROUP_PROPERTY_KEY_LAST_RESORT:
+                return collectProxyOrGroupSuggestions(model, struct, range)
         }
         return []
     }

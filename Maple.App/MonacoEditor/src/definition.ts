@@ -67,7 +67,11 @@ function provideDefinitionForProxyGroup(
     const currentArgId = kv.value.substring(0, position.column - kv.valueStartCol).split(',').length - 1
     const targetName = args[currentArgId].text
     if (targetName.includes('=')) {
-        return undefined
+        const argKv = parseKvLine(args[currentArgId].text, lineId, args[currentArgId].startCol)
+        if (argKv === undefined || argKv.key !== facts.GROUP_PROPERTY_KEY_LAST_RESORT) {
+            return undefined
+        }
+        return findProxyOrGroupKeyLocation(model, struct, argKv.value)
     }
     return findProxyOrGroupKeyLocation(model, struct, targetName)
 }
