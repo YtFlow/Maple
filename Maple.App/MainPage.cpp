@@ -106,14 +106,9 @@ namespace winrt::Maple_App::implementation
         co_return configItem.as<IStorageFolder>();
     }
 
-    IAsyncOperation<StorageFile> MainPage::CopyDefaultConfig(const IStorageFolder& configFolder, const hstring& desiredName)
+    IAsyncOperation<StorageFile> MainPage::CopyDefaultConfig(const IStorageFolder& configFolder, std::wstring_view path, const hstring& desiredName)
     {
-        const auto& defaultConfigSrc = co_await StorageFile::GetFileFromApplicationUriAsync(Uri{ L"ms-appx:///Config/default.conf" });
-        co_return co_await defaultConfigSrc.CopyAsync(configFolder, desiredName, NameCollisionOption::GenerateUniqueName);
-    }
-    IAsyncOperation<StorageFile> MainPage::CopyDefaultJsonConfig(const IStorageFolder& configFolder, const hstring& desiredName)
-    {
-        const auto& defaultConfigSrc = co_await StorageFile::GetFileFromApplicationUriAsync(Uri{ L"ms-appx:///Config/default.json" });
+        const auto& defaultConfigSrc = co_await StorageFile::GetFileFromApplicationUriAsync(Uri{ path });
         co_return co_await defaultConfigSrc.CopyAsync(configFolder, desiredName, NameCollisionOption::GenerateUniqueName);
     }
 
@@ -124,7 +119,7 @@ namespace winrt::Maple_App::implementation
         m_configFolder = co_await InitializeConfigFolder();
         auto configFiles = co_await m_configFolder.GetFilesAsync();
         if (configFiles.Size() == 0) {
-            const auto& defaultConfigDst = co_await CopyDefaultConfig(m_configFolder, L"default.conf");
+            const auto& defaultConfigDst = co_await CopyDefaultConfig(m_configFolder, DEFAULT_CONF_FILE_PATH, L"default.conf");
             appData.LocalSettings().Values().Insert(CONFIG_PATH_SETTING_KEY, box_value(defaultConfigDst.Path()));
             configFiles = co_await m_configFolder.GetFilesAsync();
         }
@@ -295,10 +290,14 @@ namespace winrt::Maple_App::implementation
             const auto& buttonText = sender.as<MenuFlyoutItem>().Text();
             StorageFile newFile{ nullptr };
             if (buttonText == L"Conf") {
-                newFile = co_await CopyDefaultConfig(m_configFolder, L"New Config.conf");
+                newFile = co_await CopyDefaultConfig(m_configFolder, DEFAULT_CONF_FILE_PATH, L"New Config.conf");
             }
             else if (buttonText == L"JSON") {
-                newFile = co_await CopyDefaultJsonConfig(m_configFolder, L"New Config.json");
+                newFile = co_await CopyDefaultConfig(m_configFolder, DEFAULT_JSON_FILE_PATH, L"New Config.json");
+            }
+            else if (buttonText == L"Minimal")
+            {
+                newFile = co_await CopyDefaultConfig(m_configFolder, DEFAULT_MINIMAL_FILE_PATH, L"New Config.conf");
             }
             else {
                 co_return;

@@ -149,6 +149,7 @@
                                         <MenuFlyout Placement="Top">
                                             <MenuFlyoutItem Text="Conf" Click="ConfigCreateMenuItem_Click"/>
                                             <MenuFlyoutItem Text="JSON" Click="ConfigCreateMenuItem_Click"/>
+                                            <MenuFlyoutItem Text="Minimal" Click="ConfigCreateMenuItem_Click"/>
                                             <MenuFlyoutSeparator/>
                                             <MenuFlyoutItem Text="Import…" Click="ConfigImportMenuItem_Click"/>
                                         </MenuFlyout>

@@ -25,6 +25,9 @@ namespace winrt::Maple_App::implementation
 
     static const hstring CONFIG_PATH_SETTING_KEY = L"CONFIG_PATH";
     static const hstring NETIF_SETTING_KEY = L"NETIF";
+    static const std::wstring_view DEFAULT_CONF_FILE_PATH = L"ms-appx:///Config/default.conf";
+    static const std::wstring_view DEFAULT_JSON_FILE_PATH = L"ms-appx:///Config/default.json";
+    static const std::wstring_view DEFAULT_MINIMAL_FILE_PATH = L"ms-appx:///Config/minimal.conf";
     std::string getNormalizedExtentionFromPath(const winrt::hstring& path);
     struct MainPage : MainPageT<MainPage>
     {
@@ -80,8 +83,7 @@ namespace winrt::Maple_App::implementation
 
         static IAsyncAction NotifyUser(const hstring& message);
         static IAsyncOperation<IStorageFolder> InitializeConfigFolder();
-        static IAsyncOperation<StorageFile> CopyDefaultConfig(const IStorageFolder& configFolder, const hstring& desiredName);
-        static IAsyncOperation<StorageFile> CopyDefaultJsonConfig(const IStorageFolder& configFolder, const hstring& desiredName);
+        static IAsyncOperation<StorageFile> CopyDefaultConfig(const IStorageFolder& configFolder, std::wstring_view path, const hstring& desiredName);
 
         void RequestRenameItem(const Maple_App::ConfigViewModel& item);
         void SetAsDefault(const Maple_App::ConfigViewModel& item);

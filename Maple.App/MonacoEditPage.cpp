@@ -162,7 +162,18 @@ namespace winrt::Maple_App::implementation
                 {
                     path = path.replace(pos, strlen(CONFIG_ROOT_VIRTUAL_HOST), configDirPath);
                 }
-                auto const file{ co_await StorageFile::GetFileFromPathAsync(to_hstring(path)) };
+                StorageFile file{ nullptr };
+                try {
+                    file = co_await StorageFile::GetFileFromPathAsync(to_hstring(path));
+                }
+                catch (hresult_error const& hr)
+                {
+                    if (hr.code().value == 0x80070002)
+                    {
+                        co_return;
+                    }
+                    throw;
+                }
                 std::string const data{ doc["text"] };
                 auto const fstream = co_await file.OpenAsync(FileAccessMode::ReadWrite, StorageOpenOptions::AllowOnlyReaders);
                 fstream.Size(0);
