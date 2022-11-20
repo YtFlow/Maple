@@ -4,8 +4,9 @@
 #include "winrt/Windows.Storage.Streams.h"
 
 extern "C" void* lwip_strerr(uint8_t) {
-    return "";
+    return (void*)(const char*)"";
 }
+
 
 namespace winrt::Maple_Task::implementation
 {
@@ -15,39 +16,9 @@ namespace winrt::Maple_Task::implementation
     using namespace Windows::Networking::Vpn;
     using namespace Windows::Storage;
 
-    void VpnPlugin::Connect(VpnChannel const& channel)
-    {
-        const auto localhost = HostName{ L"127.0.0.1" };
-        DatagramSocket transport{}, backTransport{};
-        channel.AssociateTransport(transport, nullptr);
-        transport.BindEndpointAsync(localhost, L"").get();
-        backTransport.BindEndpointAsync(localhost, L"").get();
-        transport.ConnectAsync(localhost, backTransport.Information().LocalPort()).get();
-        backTransport.ConnectAsync(localhost, transport.Information().LocalPort()).get();
-
-        VpnRouteAssignment routeScope{};
-        routeScope.ExcludeLocalSubnets(true);
-        routeScope.Ipv4InclusionRoutes(std::vector<VpnRoute>{
-            // Ö±½ÓĞ´ 0.0.0.0/0 ÄÄÅÂ°óÁË½Ó¿ÚÒ²»áÈÆ»Ø»·
-            // VpnRoute(HostName{ L"0.0.0.0" }, 0)
-            VpnRoute(HostName{ L"0.0.0.0" }, 1),
-                VpnRoute(HostName{ L"128.0.0.0" }, 1),
-        });
-        // ÅÅ³ı´úÀí·şÎñÆ÷µÄ»°¾Í»á os 10023 ÒÔÒ»ÖÖ·ÃÎÊÈ¨ÏŞ²»ÔÊĞíµÄ·½Ê½×öÁËÒ»¸ö·ÃÎÊÌ×½Ó×ÖµÄ³¢ÊÔ
-        // routeScope.Ipv4ExclusionRoutes(std::vector<VpnRoute>{
-        //     VpnRoute(HostName{ L"172.25.0.0" }, 16)
-        // });
-
-        const auto outputStreamAbi = winrt::detach_abi(backTransport.OutputStream());
-        StopLeaf();
-        {
-            std::lock_guard _guard{ m_decapQueueLock };
-            while (!m_decapQueue.empty()) {
-                m_decapQueue.pop();
-            }
-        }
-        m_backTransport = backTransport;
-        m_netStackHandle = netstack_register([](uint8_t* data, size_t size, void* outputStreamAbi) {
+    extern "C" {
+        typedef void(__cdecl* netstack_cb)(uint8_t*, size_t, void*);
+        void cb(uint8_t* data, size_t size, void* outputStreamAbi) {
             bool needSendDummyBuffer = false;
             {
                 std::lock_guard _guard{ VpnPluginInstance->m_decapQueueLock };
@@ -71,7 +42,54 @@ namespace winrt::Maple_Task::implementation
             }
             catch (...) {}
             winrt::detach_abi(outputStream);
-            }, outputStreamAbi);
+        }
+    }
+    void VpnPlugin::Connect(VpnChannel const& channel)
+    {
+        try
+        {
+            ConnectCore(channel);
+        }
+        catch (std::exception const& ex)
+        {
+            channel.TerminateConnection(to_hstring(ex.what()));
+        }
+    }
+
+    void VpnPlugin::ConnectCore(VpnChannel const& channel)
+    {
+        const auto localhost = HostName{ L"127.0.0.1" };
+        DatagramSocket transport{}, backTransport{};
+        channel.AssociateTransport(transport, nullptr);
+        transport.BindEndpointAsync(localhost, L"").get();
+        backTransport.BindEndpointAsync(localhost, L"").get();
+        transport.ConnectAsync(localhost, backTransport.Information().LocalPort()).get();
+        backTransport.ConnectAsync(localhost, transport.Information().LocalPort()).get();
+
+        VpnRouteAssignment routeScope{};
+        routeScope.ExcludeLocalSubnets(true);
+        routeScope.Ipv4InclusionRoutes(std::vector<VpnRoute>{
+            // ç›´æ¥å†™ 0.0.0.0/0 å“ªæ€•ç»‘äº†æ¥å£ä¹Ÿä¼šç»•å›ç¯
+            // VpnRoute(HostName{ L"0.0.0.0" }, 0)
+            VpnRoute(HostName{ L"0.0.0.0" }, 1),
+                VpnRoute(HostName{ L"128.0.0.0" }, 1),
+        });
+        // æ’é™¤ä»£ç†æœåŠ¡å™¨çš„è¯å°±ä¼š os 10023 ä»¥ä¸€ç§è®¿é—®æƒé™ä¸å…è®¸çš„æ–¹å¼åšäº†ä¸€ä¸ªè®¿é—®å¥—æ¥å­—çš„å°è¯•
+        // routeScope.Ipv4ExclusionRoutes(std::vector<VpnRoute>{
+        //     VpnRoute(HostName{ L"172.25.0.0" }, 16)
+        // });
+
+        const auto outputStreamAbi = winrt::detach_abi(backTransport.OutputStream());
+        StopLeaf();
+        {
+            std::lock_guard _guard{ m_decapQueueLock };
+            while (!m_decapQueue.empty()) {
+                m_decapQueue.pop();
+            }
+        }
+        m_backTransport = backTransport;
+
+        m_netStackHandle = netstack_register(cb, outputStreamAbi);
         if (m_netStackHandle == nullptr) {
             channel.TerminateConnection(L"Error initializing Leaf netstack.");
             return;

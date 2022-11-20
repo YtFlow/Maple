@@ -6,6 +6,7 @@
 #include "MainPage.h"
 #include "EditPage.h"
 #include "MonacoEditPage.h"
+#include "UI.h"
 
 using namespace winrt;
 using namespace Windows::ApplicationModel;
@@ -35,16 +36,18 @@ App::App()
     InitializeComponent();
     Suspending({ this, &App::OnSuspending });
 
-#if defined _DEBUG && !defined DISABLE_XAML_GENERATED_BREAK_ON_UNHANDLED_EXCEPTION
     UnhandledException([this](IInspectable const&, UnhandledExceptionEventArgs const& e)
         {
-            if (IsDebuggerPresent())
-            {
-                auto errorMessage = e.Message();
-                __debugbreak();
-            }
-        });
+            auto errorMessage = e.Message();
+#if defined _DEBUG && !defined DISABLE_XAML_GENERATED_BREAK_ON_UNHANDLED_EXCEPTION
+    if (IsDebuggerPresent())
+    {
+        __debugbreak();
+    }
 #endif
+    UI::NotifyUser(std::move(errorMessage), L"Unexpected error");
+    e.Handled(true);
+        });
 }
 
 /// <summary>
@@ -120,8 +123,8 @@ fire_and_forget App::OnSuspending([[maybe_unused]] IInspectable const& sender, [
 {
     using namespace std::literals::chrono_literals;
     // Save application state and stop any background activity
-    const auto& saveModifiedContent = EditPage::SaveModifiedContent;
-    const auto& saveMonacoModifiedContent = MonacoEditPage::SaveModifiedContent;
+    const auto saveModifiedContent = std::move(EditPage::SaveModifiedContent);
+    const auto saveMonacoModifiedContent = std::move(MonacoEditPage::SaveModifiedContent);
     if (saveModifiedContent == nullptr && saveMonacoModifiedContent == nullptr) {
         co_return;
     }

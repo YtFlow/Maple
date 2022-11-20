@@ -21,6 +21,7 @@ namespace winrt::Maple_Task::implementation
         void Decapsulate(Windows::Networking::Vpn::VpnChannel const& channel, Windows::Networking::Vpn::VpnPacketBuffer const& encapBuffer, Windows::Networking::Vpn::VpnPacketBufferList const& decapsulatedPackets, Windows::Networking::Vpn::VpnPacketBufferList const& controlPacketsToSend);
 
     private:
+        void ConnectCore(Windows::Networking::Vpn::VpnChannel const& channel);
         void StopLeaf();
 
         Leaf* m_leaf{};

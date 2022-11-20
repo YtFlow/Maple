@@ -4,11 +4,16 @@
 #include "MonacoEditPage.g.cpp"
 #endif
 
+#include <winrt/Windows.Storage.h>
+#include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Microsoft.Web.WebView2.Core.h>
 #include <nlohmann/json.hpp>
 
+#include "UI.h"
+
 using namespace winrt;
 using namespace Windows::Storage;
+using namespace Windows::Storage::Streams;
 using namespace Windows::UI::Xaml;
 
 namespace winrt::Maple_App::implementation
@@ -18,14 +23,16 @@ namespace winrt::Maple_App::implementation
         InitializeComponent();
     }
 
-    fire_and_forget MonacoEditPage::Page_Loaded(IInspectable const& sender, RoutedEventArgs const& e)
+    fire_and_forget MonacoEditPage::Page_Loaded(IInspectable const&, RoutedEventArgs const&)
     {
-        auto const lifetime{ get_strong() };
-        co_await initializeWebView();
-    }
-    void MonacoEditPage::Page_Unloaded(IInspectable const& sender, RoutedEventArgs const& e)
-    {
-        //
+        try {
+            auto const lifetime{ get_strong() };
+            co_await initializeWebView();
+        }
+        catch (...)
+        {
+            UI::NotifyException(L"Initializing WebView");
+        }
     }
     IAsyncAction MonacoEditPage::initializeWebView() {
         auto const lifetime{ get_strong() };
@@ -46,44 +53,42 @@ namespace winrt::Maple_App::implementation
             configPath,
             Microsoft::Web::WebView2::Core::CoreWebView2HostResourceAccessKind::Allow
         );
-        webview.Source(Uri{ L"http://maple-monaco-editor-app-root.com/MonacoEditor/editor.html" });
+        webview.Source(Uri{ WEBVIEW_EDITOR_URL });
     }
 
     fire_and_forget MonacoEditPage::OnNavigatedTo(NavigationEventArgs const& e) {
-        auto const lifetime{ get_strong() };
-        auto const param = e.Parameter().as<Maple_App::ConfigViewModel>();
-        hstring fileName;
-        try
-        {
-            fileName = param.File().Name();
+        try {
+            auto const lifetime{ get_strong() };
+            auto const param = e.Parameter().as<Maple_App::ConfigViewModel>();
+            hstring fileName;
+            try
+            {
+                fileName = param.File().Name();
+            }
+            catch (...) {}
+            if (fileName.empty())
+            {
+                co_return;
+            }
+            m_currentFileName = fileName;
+            switch (m_webviewState)
+            {
+            case MonacoEditPageWebViewState::Uninitialized:
+                co_await initializeWebView();
+                break;
+            case MonacoEditPageWebViewState::AwaitingEditorReady:
+                break;
+            case MonacoEditPageWebViewState::EditorReady:
+                co_await lifetime->WebView().ExecuteScriptAsync(hstring{ L"window.mapleHostApi.loadFile(`http://maple-monaco-editor-config-root.com/" } +
+                    fileName +
+                    L"`)");
+                break;
+            }
         }
-        catch (...) {}
-        if (fileName == L"")
+        catch (...)
         {
-            co_return;
+            UI::NotifyException(L"Loading WebView page");
         }
-        m_currentFileName = fileName;
-        switch (m_webviewState)
-        {
-        case MonacoEditPageWebViewState::Uninitialized:
-            co_await initializeWebView();
-            break;
-        case MonacoEditPageWebViewState::AwaitingEditorReady:
-            break;
-        case MonacoEditPageWebViewState::EditorReady:
-            co_await lifetime->WebView().ExecuteScriptAsync(hstring{ L"window.mapleHostApi.loadFile(`http://maple-monaco-editor-config-root.com/" } +
-                fileName +
-                L"`)");
-            break;
-        }
-    }
-
-    fire_and_forget MonacoEditPage::OnNavigatedFrom(NavigationEventArgs const& e)
-    {
-        // Although editor page will trigger a save before loading new files, there are cases where it does not load a
-        // new file, e.g. user selected a .mmdb file.
-        // TODO: trigger save
-        co_return;
     }
 
     fire_and_forget MonacoEditPage::WebView_WebMessageReceived(
@@ -91,74 +96,109 @@ namespace winrt::Maple_App::implementation
         CoreWebView2WebMessageReceivedEventArgs const& args
     )
     {
-        auto const lifetime{ get_strong() };
-        nlohmann::json doc;
-        bool hasError{};
         try {
-            doc = nlohmann::json::parse(to_string(args.WebMessageAsJson()));
-        }
-        catch (...)
-        {
-            hasError = true;
-        }
-        if (hasError)
-        {
-            co_return;
-        }
+            auto const lifetime{ get_strong() };
 
-        std::string const& cmd = doc["cmd"];
-        if (cmd == "editorReady")
-        {
-            m_webviewState = MonacoEditPageWebViewState::EditorReady;
-            co_await WebView().ExecuteScriptAsync(hstring{ L"window.mapleHostApi.loadFile(`" } +
-                CONFIG_ROOT_VIRTUAL_HOSTW +
-                m_currentFileName +
-                L"`)");
-            SaveModifiedContent = [weak = weak_ref{ lifetime }]()->IAsyncAction
+            auto const source = args.Source();
+            if (source != WEBVIEW_EDITOR_URL)
             {
-                if (auto const lifetime{ weak.get() })
-                {
-                    struct awaiter : std::suspend_always
-                    {
-                        void await_suspend(
-                            std::coroutine_handle<> handle)
-                        {
-                            lifetime->m_fileSaveHandle = handle;
-                        }
-
-                        com_ptr<MonacoEditPage> lifetime;
-                    };
-                    lifetime->WebView().ExecuteScriptAsync(hstring{ L"window.mapleHostApi.requestSaveCurrent()" });
-                    co_await awaiter{ .lifetime = lifetime };
-                }
                 co_return;
-            };
-        }
-        else if (cmd == "save")
-        {
+            }
+
+            nlohmann::json doc;
+            bool hasError{};
             try {
+                doc = nlohmann::json::parse(to_string(args.WebMessageAsJson()));
+            }
+            catch (...)
+            {
+                hasError = true;
+            }
+            if (hasError)
+            {
+                co_return;
+            }
+
+            std::string const& cmd = doc["cmd"];
+            if (cmd == "editorReady")
+            {
+                m_webviewState = MonacoEditPageWebViewState::EditorReady;
+                co_await WebView().ExecuteScriptAsync(hstring{ L"window.mapleHostApi.loadFile(`" } +
+                    CONFIG_ROOT_VIRTUAL_HOSTW +
+                    m_currentFileName +
+                    L"`)");
+                SaveModifiedContent = [weak = weak_ref{ lifetime }]()->IAsyncAction
+                {
+                    if (auto const lifetime{ weak.get() })
+                    {
+                        struct awaiter : std::suspend_always
+                        {
+                            void await_suspend(
+                                std::coroutine_handle<> handle)
+                            {
+                                lifetime->m_fileSaveHandle = handle;
+                            }
+
+                            com_ptr<MonacoEditPage> lifetime;
+                        };
+                        lifetime->WebView().ExecuteScriptAsync(hstring{ L"window.mapleHostApi.requestSaveCurrent()" });
+                        co_await awaiter{ .lifetime = lifetime };
+                    }
+                    co_return;
+                };
+            }
+            else if (cmd == "save")
+            {
+                std::string path{ doc["path"] };
+                if (path == m_currentSavingFileName)
+                {
+                    co_return;
+                }
+                m_currentSavingFileName = path;
+
                 auto const configDir{ co_await ApplicationData::Current().LocalFolder().CreateFolderAsync(L"config", CreationCollisionOption::OpenIfExists) };
                 auto const configDirPath{ to_string(configDir.Path()) + "\\" };
-                std::string path{ doc["path"] };
                 if (auto const pos{ path.find(CONFIG_ROOT_VIRTUAL_HOST) }; pos != std::string::npos)
                 {
                     path = path.replace(pos, strlen(CONFIG_ROOT_VIRTUAL_HOST), configDirPath);
                 }
                 auto const file{ co_await StorageFile::GetFileFromPathAsync(to_hstring(path)) };
                 std::string const data{ doc["text"] };
-                co_await FileIO::WriteBytesAsync(file, array_view{
-                    reinterpret_cast<uint8_t const*>(data.data()),
-                    static_cast<uint32_t>(data.size())
-                    });
+                auto const fstream = co_await file.OpenAsync(FileAccessMode::ReadWrite, StorageOpenOptions::AllowOnlyReaders);
+                fstream.Size(0);
+                try {
+                    DataWriter const wr(fstream);
+                    try {
+                        wr.WriteBytes(array_view(reinterpret_cast <uint8_t const*>(data.data()), data.size()));
+                        co_await wr.StoreAsync();
+                        co_await fstream.FlushAsync().as<IAsyncOperation<bool>>();
+                        wr.Close();
+                    }
+                    catch (...)
+                    {
+                        wr.Close();
+                        throw;
+                    }
+                    fstream.Close();
+                }
+                catch (...)
+                {
+                    fstream.Close();
+                    throw;
+                }
+                co_await resume_foreground(Dispatcher());
+                if (auto const fileSaveHandle{ std::exchange(m_fileSaveHandle, nullptr) }) {
+                    fileSaveHandle();
+                }
             }
-            catch (...) {}
-            co_await resume_foreground(Dispatcher());
-            if (auto const fileSaveHandle{ std::exchange(m_fileSaveHandle, nullptr) }) {
-                fileSaveHandle();
-            }
+            m_currentSavingFileName = "";
+            co_return;
         }
-        co_return;
-
+        catch (...)
+        {
+            m_currentSavingFileName = "";
+            UI::NotifyException(L"Processing web messages");
+        }
     }
 
 }

@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "MainPage.h"
 #include "MainPage.g.cpp"
 #include <filesystem>
@@ -6,6 +6,7 @@
 #include <winrt/Windows.UI.ViewManagement.h>
 #include <winrt/Windows.UI.Xaml.Media.h>
 #include "Model\Netif.h"
+#include "UI.h"
 
 namespace winrt::Maple_App::implementation
 {
@@ -146,11 +147,17 @@ namespace winrt::Maple_App::implementation
 
     void MainPage::ConfigSetAsDefaultMenuItem_Click(IInspectable const& sender, RoutedEventArgs const&)
     {
-        auto item = sender.as<FrameworkElement>().DataContext().as<Maple_App::ConfigViewModel>();
-        if (item == nullptr) {
-            item = ConfigListView().SelectedItem().as<Maple_App::ConfigViewModel>();
+        try {
+            auto item = sender.as<FrameworkElement>().DataContext().as<Maple_App::ConfigViewModel>();
+            if (item == nullptr) {
+                item = ConfigListView().SelectedItem().as<Maple_App::ConfigViewModel>();
+            }
+            SetAsDefault(item);
         }
-        SetAsDefault(item);
+        catch (...)
+        {
+            UI::NotifyException(L"Setting default");
+        }
     }
 
     void MainPage::ConfigItem_DoubleTapped(IInspectable const& sender, DoubleTappedRoutedEventArgs const&)
@@ -161,24 +168,36 @@ namespace winrt::Maple_App::implementation
 
     void MainPage::SetAsDefault(const Maple_App::ConfigViewModel& item)
     {
-        const auto name = getNormalizedExtentionFromPath(item.Name());
-        if (name != ".conf" && name != ".json") {
-            NotifyUser(L"A valid configuration file must end with .conf or .json.");
-            return;
+        try {
+            const auto name = getNormalizedExtentionFromPath(item.Name());
+            if (name != ".conf" && name != ".json") {
+                NotifyUser(L"A valid configuration file must end with .conf or .json.");
+                return;
+            }
+            ApplicationData::Current().LocalSettings().Values().Insert(CONFIG_PATH_SETTING_KEY, box_value(item.File().Path()));
+            m_defaultConfig.IsDefault(false);
+            item.IsDefault(true);
+            m_defaultConfig = item;
         }
-        ApplicationData::Current().LocalSettings().Values().Insert(CONFIG_PATH_SETTING_KEY, box_value(item.File().Path()));
-        m_defaultConfig.IsDefault(false);
-        item.IsDefault(true);
-        m_defaultConfig = item;
+        catch (...)
+        {
+            UI::NotifyException(L"Setting default");
+        }
     }
 
     void MainPage::ConfigRenameMenuItem_Click(IInspectable const& sender, RoutedEventArgs const&)
     {
-        auto item = sender.as<FrameworkElement>().DataContext().as<Maple_App::ConfigViewModel>();
-        if (item == nullptr) {
-            item = ConfigListView().SelectedItem().as<Maple_App::ConfigViewModel>();
+        try {
+            auto item = sender.as<FrameworkElement>().DataContext().as<Maple_App::ConfigViewModel>();
+            if (item == nullptr) {
+                item = ConfigListView().SelectedItem().as<Maple_App::ConfigViewModel>();
+            }
+            RequestRenameItem(item);
         }
-        RequestRenameItem(item);
+        catch (...)
+        {
+            UI::NotifyException(L"Requesting rename");
+        }
     }
 
     void MainPage::RequestRenameItem(const Maple_App::ConfigViewModel& item)
@@ -197,37 +216,43 @@ namespace winrt::Maple_App::implementation
 
     fire_and_forget MainPage::ConfigDeleteMenuItem_Click(IInspectable const& sender, RoutedEventArgs const& e)
     {
-        const auto lifetime = get_strong();
-        auto item = sender.as<FrameworkElement>().DataContext().as<Maple_App::ConfigViewModel>();
-        if (item == nullptr) {
-            item = ConfigListView().SelectedItem().as<Maple_App::ConfigViewModel>();
-        }
-        if (item.IsDefault()) {
-            co_await NotifyUser(L"Default configuration cannot be deleted.");
-            co_return;
-        }
-        uint32_t index;
-        auto configItems = ConfigItems();
-        if (!configItems.IndexOf(item, index)) {
-            co_return;
-        }
-        ContentDialog c{};
-        c.Title(box_value(L"Delete this configuration file?"));
-        c.Content(box_value(L"This operation cannot be undone."));
-        c.PrimaryButtonCommand(StandardUICommand{ StandardUICommandKind::Delete });
-        c.SecondaryButtonCommand(StandardUICommand{ StandardUICommandKind::Close });
-        const auto& result = co_await c.ShowAsync();
-        if (result != ContentDialogResult::Primary) {
-            co_return;
-        }
+        try {
+            const auto lifetime = get_strong();
+            auto item = sender.as<FrameworkElement>().DataContext().as<Maple_App::ConfigViewModel>();
+            if (item == nullptr) {
+                item = ConfigListView().SelectedItem().as<Maple_App::ConfigViewModel>();
+            }
+            if (item.IsDefault()) {
+                co_await NotifyUser(L"Default configuration cannot be deleted.");
+                co_return;
+            }
+            uint32_t index;
+            auto configItems = ConfigItems();
+            if (!configItems.IndexOf(item, index)) {
+                co_return;
+            }
+            ContentDialog c{};
+            c.Title(box_value(L"Delete this configuration file?"));
+            c.Content(box_value(L"This operation cannot be undone."));
+            c.PrimaryButtonCommand(StandardUICommand{ StandardUICommandKind::Delete });
+            c.SecondaryButtonCommand(StandardUICommand{ StandardUICommandKind::Close });
+            const auto& result = co_await c.ShowAsync();
+            if (result != ContentDialogResult::Primary) {
+                co_return;
+            }
 
-        if (ConfigListView().SelectedItem() == item) {
-            ConfigListView().SelectedIndex(ConfigListView().SelectedIndex() == 0 ? 1 : 0);
+            if (ConfigListView().SelectedItem() == item) {
+                ConfigListView().SelectedIndex(ConfigListView().SelectedIndex() == 0 ? 1 : 0);
+            }
+            configItems.RemoveAt(index);
+            co_await item.Delete();
+            if (configItems.Size() == 0) {
+                LoadConfigs();
+            }
         }
-        configItems.RemoveAt(index);
-        co_await item.Delete();
-        if (configItems.Size() == 0) {
-            LoadConfigs();
+        catch (...)
+        {
+            UI::NotifyException(L"Deleting file");
         }
     }
 
@@ -245,160 +270,220 @@ namespace winrt::Maple_App::implementation
     }
 
     fire_and_forget MainPage::ConfirmRename() {
-        const auto lifetime = get_strong();
-        const auto& renameDialog = RenameDialog();
-        const auto& item = renameDialog.DataContext().as<Maple_App::ConfigViewModel>();
-        if (item == nullptr) {
-            co_return;
+        try {
+            const auto lifetime = get_strong();
+            const auto& renameDialog = RenameDialog();
+            const auto& item = renameDialog.DataContext().as<Maple_App::ConfigViewModel>();
+            if (item == nullptr) {
+                co_return;
+            }
+            co_await item.Rename(RenameDialogText().Text());
+            if (item == m_defaultConfig) {
+                ApplicationData::Current().LocalSettings().Values().Insert(CONFIG_PATH_SETTING_KEY, box_value(item.File().Path()));
+            }
         }
-        co_await item.Rename(RenameDialogText().Text());
-        if (item == m_defaultConfig) {
-            ApplicationData::Current().LocalSettings().Values().Insert(CONFIG_PATH_SETTING_KEY, box_value(item.File().Path()));
+        catch (...)
+        {
+            UI::NotifyException(L"Renaming");
         }
     }
 
     fire_and_forget MainPage::ConfigCreateMenuItem_Click(IInspectable const& sender, RoutedEventArgs const&)
     {
-        const auto lifetime = get_strong();
-        const auto& buttonText = sender.as<MenuFlyoutItem>().Text();
-        StorageFile newFile{ nullptr };
-        if (buttonText == L"Conf") {
-            newFile = co_await CopyDefaultConfig(m_configFolder, L"New Config.conf");
+        try {
+            const auto lifetime = get_strong();
+            const auto& buttonText = sender.as<MenuFlyoutItem>().Text();
+            StorageFile newFile{ nullptr };
+            if (buttonText == L"Conf") {
+                newFile = co_await CopyDefaultConfig(m_configFolder, L"New Config.conf");
+            }
+            else if (buttonText == L"JSON") {
+                newFile = co_await CopyDefaultJsonConfig(m_configFolder, L"New Config.json");
+            }
+            else {
+                co_return;
+            }
+            const auto& item = co_await ConfigViewModel::FromFile(newFile, false);
+            ConfigItems().Append(item);
+            RequestRenameItem(item);
         }
-        else if (buttonText == L"JSON") {
-            newFile = co_await CopyDefaultJsonConfig(m_configFolder, L"New Config.json");
+        catch (...)
+        {
+            UI::NotifyException(L"Creating file");
         }
-        else {
-            co_return;
-        }
-        const auto& item = co_await ConfigViewModel::FromFile(newFile, false);
-        ConfigItems().Append(item);
-        RequestRenameItem(item);
     }
 
     fire_and_forget MainPage::ConfigImportMenuItem_Click(IInspectable const& sender, RoutedEventArgs const& e)
     {
-        const auto lifetime = get_strong();
-        bool unsnapped = ((ApplicationView::Value() != ApplicationViewState::Snapped) || ApplicationView::TryUnsnap());
-        if (!unsnapped)
-        {
-            co_await NotifyUser(L"Cannot unsnap the app.");
-            co_return;
+        try {
+            const auto lifetime = get_strong();
+            bool unsnapped = ((ApplicationView::Value() != ApplicationViewState::Snapped) || ApplicationView::TryUnsnap());
+            if (!unsnapped)
+            {
+                co_await NotifyUser(L"Cannot unsnap the app.");
+                co_return;
+            }
+            ImportFilePicker().FileTypeFilter().ReplaceAll({ L".conf", L".json", L".mmdb", L".dat", L".cer", L".crt" });
+            const auto& files = co_await ImportFilePicker().PickMultipleFilesAsync();
+            co_await ImportFiles(files);
         }
-        ImportFilePicker().FileTypeFilter().ReplaceAll({ L".conf", L".json", L".mmdb", L".dat", L".cer", L".crt" });
-        const auto& files = co_await ImportFilePicker().PickMultipleFilesAsync();
-        co_await ImportFiles(files);
+        catch (...)
+        {
+            UI::NotifyException(L"Importing files");
+        }
     }
 
     fire_and_forget MainPage::ConfigDuplicateMenuItem_Click(IInspectable const& sender, RoutedEventArgs const&)
     {
-        const auto lifetime = get_strong();
-        auto item = sender.as<FrameworkElement>().DataContext().as<Maple_App::ConfigViewModel>();
-        if (item == nullptr) {
-            item = ConfigListView().SelectedItem().as<Maple_App::ConfigViewModel>();
+        try {
+            const auto lifetime = get_strong();
+            auto item = sender.as<FrameworkElement>().DataContext().as<Maple_App::ConfigViewModel>();
+            if (item == nullptr) {
+                item = ConfigListView().SelectedItem().as<Maple_App::ConfigViewModel>();
+            }
+            const auto& file = item.File();
+            const auto& parent = co_await file.GetParentAsync();
+            const auto& newFile = co_await file.CopyAsync(parent, file.Name(), NameCollisionOption::GenerateUniqueName);
+            ConfigItems().Append(co_await ConfigViewModel::FromFile(newFile, false));
         }
-        const auto& file = item.File();
-        const auto& parent = co_await file.GetParentAsync();
-        const auto& newFile = co_await file.CopyAsync(parent, file.Name(), NameCollisionOption::GenerateUniqueName);
-        ConfigItems().Append(co_await ConfigViewModel::FromFile(newFile, false));
+        catch (...)
+        {
+            UI::NotifyException(L"Duplicating");
+        }
     }
 
     void MainPage::MainPivot_PivotItemLoaded(Pivot const&, PivotItemEventArgs const& args)
     {
-        if (args.Item().Header().as<hstring>() == L"Setting") {
-            const auto& netifs = Netif::EnumerateInterfaces();
-            std::vector<IInspectable> boxed_netifs;
-            boxed_netifs.reserve(netifs.size());
-            std::transform(netifs.begin(), netifs.end(), std::back_inserter(boxed_netifs), [](const auto& netif) -> auto {
-                return netif;
-                });
-            NetifCombobox().ItemsSource(single_threaded_vector(std::move(boxed_netifs)));
-
-            const auto& currentNetif = ApplicationData::Current().LocalSettings().Values().TryLookup(NETIF_SETTING_KEY).try_as<hstring>();
-            if (currentNetif.has_value()) {
-                NetifCombobox().SelectedValue(box_value(currentNetif.value()));
-            }
-            else {
-                const auto it = std::find_if(netifs.begin(), netifs.end(), [](const auto& netif) -> bool {
-                    return netif.Desc().size() > 0 && netif.Desc()[0] == L'★';
+        try {
+            if (args.Item().Header().as<hstring>() == L"Setting") {
+                const auto& netifs = Netif::EnumerateInterfaces();
+                std::vector<IInspectable> boxed_netifs;
+                boxed_netifs.reserve(netifs.size());
+                std::transform(netifs.begin(), netifs.end(), std::back_inserter(boxed_netifs), [](const auto& netif) -> auto {
+                    return netif;
                     });
-                if (it != netifs.end()) {
-                    NetifCombobox().SelectedItem(*it);
+                NetifCombobox().ItemsSource(single_threaded_vector(std::move(boxed_netifs)));
+
+                const auto& currentNetif = ApplicationData::Current().LocalSettings().Values().TryLookup(NETIF_SETTING_KEY).try_as<hstring>();
+                if (currentNetif.has_value()) {
+                    NetifCombobox().SelectedValue(box_value(currentNetif.value()));
+                }
+                else {
+                    const auto it = std::find_if(netifs.begin(), netifs.end(), [](const auto& netif) -> bool {
+                        return netif.Desc().size() > 0 && netif.Desc()[0] == L'★';
+                        });
+                    if (it != netifs.end()) {
+                        NetifCombobox().SelectedItem(*it);
+                    }
                 }
             }
+        }
+        catch (...)
+        {
+            UI::NotifyException(L"Loading settings");
         }
     }
     void MainPage::NetifCombobox_SelectionChanged(IInspectable const&, SelectionChangedEventArgs const& e)
     {
-        const auto it = e.AddedItems().First();
-        if (!it.HasCurrent() || it.Current().try_as<Maple_App::Netif>() == nullptr) {
-            return;
-        }
+        try {
+            const auto it = e.AddedItems().First();
+            if (!it.HasCurrent() || it.Current().try_as<Maple_App::Netif>() == nullptr) {
+                return;
+            }
 
-        const auto& netif = it.Current().as<Maple_App::Netif>();
-        ApplicationData::Current().LocalSettings().Values().Insert(NETIF_SETTING_KEY, box_value(netif.Addr()));
+            const auto& netif = it.Current().as<Maple_App::Netif>();
+            ApplicationData::Current().LocalSettings().Values().Insert(NETIF_SETTING_KEY, box_value(netif.Addr()));
+        }
+        catch (...)
+        {
+            UI::NotifyException(L"Setting interface");
+        }
     }
 
     void MainPage::ConfigListView_SelectionChanged(IInspectable const&, SelectionChangedEventArgs const& e)
     {
-        const auto& item = e.AddedItems().First().Current();
-        auto targetPage = xaml_typename<MonacoEditPage>();
-        const auto& config = item.try_as<Maple_App::ConfigViewModel>();
-        if (config != nullptr) {
-            const auto ext = getNormalizedExtentionFromPath(config.Name());
-            if (ext == ".mmdb") {
-                targetPage = xaml_typename<MmdbPage>();
+        try {
+            const auto& item = e.AddedItems().First().Current();
+            auto targetPage = xaml_typename<MonacoEditPage>();
+            const auto& config = item.try_as<Maple_App::ConfigViewModel>();
+            if (config != nullptr) {
+                const auto ext = getNormalizedExtentionFromPath(config.Name());
+                if (ext == ".mmdb") {
+                    targetPage = xaml_typename<MmdbPage>();
+                }
+                else if (ext == ".dat") {
+                    targetPage = xaml_typename<DatPage>();
+                }
+                else if (ext == ".cer" || ext == ".crt") {
+                    targetPage = xaml_typename<CertPage>();
+                }
             }
-            else if (ext == ".dat") {
-                targetPage = xaml_typename<DatPage>();
+            if (targetPage.Name != xaml_typename<MonacoEditPage>().Name)
+            {
+                MainContentFrame().BackStack().Clear();
             }
-            else if (ext == ".cer" || ext == ".crt") {
-                targetPage = xaml_typename<CertPage>();
-            }
+            MainContentFrame().Navigate(targetPage, item);
         }
-        if (targetPage.Name != xaml_typename<MonacoEditPage>().Name)
+        catch (...)
         {
-            MainContentFrame().BackStack().Clear();
+            UI::NotifyException(L"Opening file");
         }
-        MainContentFrame().Navigate(targetPage, item);
     }
 
     void MainPage::ConfigListView_DragItemsStarting(IInspectable const&, DragItemsStartingEventArgs const& e)
     {
-        std::vector<IStorageItem> files;
-        files.reserve(static_cast<size_t>(e.Items().Size()));
-        for (const auto& obj : e.Items()) {
-            const auto& item = obj.try_as<Maple_App::ConfigViewModel>();
-            if (item == nullptr) {
-                continue;
+        try {
+            std::vector<IStorageItem> files;
+            files.reserve(static_cast<size_t>(e.Items().Size()));
+            for (const auto& obj : e.Items()) {
+                const auto& item = obj.try_as<Maple_App::ConfigViewModel>();
+                if (item == nullptr) {
+                    continue;
+                }
+                files.push_back(item.File());
             }
-            files.push_back(item.File());
+            const auto& data = e.Data();
+            data.SetStorageItems(files);
+            data.RequestedOperation(DataPackageOperation::Copy);
         }
-        const auto& data = e.Data();
-        data.SetStorageItems(files);
-        data.RequestedOperation(DataPackageOperation::Copy);
+        catch (...)
+        {
+            UI::NotifyException(L"Preparing drag items");
+        }
     }
 
     void MainPage::ConfigListView_DragOver(IInspectable const&, DragEventArgs const& e)
     {
-        if (static_cast<uint32_t>(e.AllowedOperations() & DataPackageOperation::Copy) == 0
-            || !e.DataView().Contains(StandardDataFormats::StorageItems())) {
-            e.AcceptedOperation(DataPackageOperation::None);
-            return;
+        try {
+            if (static_cast<uint32_t>(e.AllowedOperations() & DataPackageOperation::Copy) == 0
+                || !e.DataView().Contains(StandardDataFormats::StorageItems())) {
+                e.AcceptedOperation(DataPackageOperation::None);
+                return;
+            }
+            e.AcceptedOperation(DataPackageOperation::Copy);
         }
-        e.AcceptedOperation(DataPackageOperation::Copy);
+        catch (...)
+        {
+            UI::NotifyException(L"Dragging");
+        }
     }
     fire_and_forget MainPage::ConfigListView_Drop(IInspectable const&, DragEventArgs const& e)
     {
-        const auto lifetime = get_strong();
-        const auto& dataView = e.DataView();
-        if (static_cast<uint32_t>(e.AllowedOperations() & DataPackageOperation::Copy) == 0
-            || !dataView.Contains(StandardDataFormats::StorageItems())) {
-            co_return;
-        }
+        try {
+            const auto lifetime = get_strong();
+            const auto& dataView = e.DataView();
+            if (static_cast<uint32_t>(e.AllowedOperations() & DataPackageOperation::Copy) == 0
+                || !dataView.Contains(StandardDataFormats::StorageItems())) {
+                co_return;
+            }
 
-        const auto& items = co_await dataView.GetStorageItemsAsync();
-        co_await ImportFiles(items);
+            const auto& items = co_await dataView.GetStorageItemsAsync();
+            co_await ImportFiles(items);
+        }
+        catch (...)
+        {
+            UI::NotifyException(L"Pasting files");
+        }
     }
 
     void MainPage::WindowWidth_CurrentStateChanged(IInspectable const&, VisualStateChangedEventArgs const& e)
@@ -417,88 +502,106 @@ namespace winrt::Maple_App::implementation
 
     fire_and_forget MainPage::GenerateProfileButton_Click(IInspectable const& sender, RoutedEventArgs const& e)
     {
-        const auto lifetime = get_strong();
-        const auto& profile = VpnPlugInProfile{};
-        profile.AlwaysOn(false);
-        profile.ProfileName(L"Maple");
-        profile.RequireVpnClientAppUI(true);
-        profile.VpnPluginPackageFamilyName(Windows::ApplicationModel::Package::Current().Id().FamilyName());
-        profile.RememberCredentials(false);
-        profile.ServerUris().Append(Uri{ L"https://github.com/YtFlow/Maple" });
-        const auto& result = co_await VpnMgmtAgent.AddProfileFromObjectAsync(profile);
-        if (result == VpnManagementErrorStatus::Ok) {
-            co_await NotifyUser(L"Profile generated.");
+        try {
+            const auto lifetime = get_strong();
+            const auto& profile = VpnPlugInProfile{};
+            profile.AlwaysOn(false);
+            profile.ProfileName(L"Maple");
+            profile.RequireVpnClientAppUI(true);
+            profile.VpnPluginPackageFamilyName(Windows::ApplicationModel::Package::Current().Id().FamilyName());
+            profile.RememberCredentials(false);
+            profile.ServerUris().Append(Uri{ L"https://github.com/YtFlow/Maple" });
+            const auto& result = co_await VpnMgmtAgent.AddProfileFromObjectAsync(profile);
+            if (result == VpnManagementErrorStatus::Ok) {
+                co_await NotifyUser(L"Profile generated.");
+            }
+            else {
+                co_await NotifyUser(L"Failed to generate a profile (" + to_hstring(static_cast<int32_t>(result)) + L").");
+            }
         }
-        else {
-            co_await NotifyUser(L"Failed to generate a profile (" + to_hstring(static_cast<int32_t>(result)) + L").");
+        catch (...)
+        {
+            UI::NotifyException(L"Generating profile");
         }
     }
 
     fire_and_forget MainPage::ConnectionToggleSwitch_Toggled(IInspectable const&, RoutedEventArgs const&)
     {
-        const auto lifetime{ get_strong() };
+        try {
+            const auto lifetime{ get_strong() };
 
-        if (!ApplicationData::Current().LocalSettings().Values().HasKey(NETIF_SETTING_KEY)) {
-            MainPivot().SelectedIndex(1);
-            co_await 400ms;
-            co_await resume_foreground(Dispatcher());
-            NetifCombobox().IsDropDownOpen(true);
-            co_return;
-        }
+            if (!ApplicationData::Current().LocalSettings().Values().HasKey(NETIF_SETTING_KEY)) {
+                MainPivot().SelectedIndex(1);
+                co_await 400ms;
+                co_await resume_foreground(Dispatcher());
+                NetifCombobox().IsDropDownOpen(true);
+                co_return;
+            }
 
-        const auto connect = ConnectionToggleSwitch().IsOn();
-        ConnectionToggleSwitch().IsEnabled(false);
-        VpnManagementErrorStatus status = VpnManagementErrorStatus::Ok;
-        if (connect) {
-            status = co_await VpnMgmtAgent.ConnectProfileAsync(m_vpnProfile);
+            const auto connect = ConnectionToggleSwitch().IsOn();
+            ConnectionToggleSwitch().IsEnabled(false);
+            VpnManagementErrorStatus status = VpnManagementErrorStatus::Ok;
+            if (connect) {
+                status = co_await VpnMgmtAgent.ConnectProfileAsync(m_vpnProfile);
+            }
+            else {
+                status = co_await VpnMgmtAgent.DisconnectProfileAsync(m_vpnProfile);
+            }
+            if (status == VpnManagementErrorStatus::Ok)
+            {
+                ConnectionToggleSwitch().IsEnabled(true);
+            }
+            else {
+                NotifyUser(L"Could not perform the requested operation. Please try again from system VPN settings for detailed error messages.");
+            }
         }
-        else {
-            status = co_await VpnMgmtAgent.DisconnectProfileAsync(m_vpnProfile);
-        }
-        if (status == VpnManagementErrorStatus::Ok)
+        catch (...)
         {
-            ConnectionToggleSwitch().IsEnabled(true);
-        }
-        else {
-            NotifyUser(L"Could not perform the requested operation. Please try again from system VPN settings for detailed error messages.");
+            UI::NotifyException(L"Connecting");
         }
     }
     fire_and_forget MainPage::StartConnectionCheck()
     {
-        const auto lifetime{ get_strong() };
-        IVectorView<IVpnProfile> profiles{ nullptr };
+        try {
+            const auto lifetime{ get_strong() };
+            IVectorView<IVpnProfile> profiles{ nullptr };
 
-        auto event_token{ ConnectionToggleSwitch().Toggled({ this, &MainPage::ConnectionToggleSwitch_Toggled }) };
-        while (true) {
-            if (m_vpnProfile == nullptr) {
-                profiles = co_await VpnMgmtAgent.GetProfilesAsync();
-                for (auto const p : profiles) {
-                    if (p.ProfileName() == L"Maple" || p.ProfileName() == L"maple") {
-                        m_vpnProfile = p.try_as<VpnPlugInProfile>();
-                        break;
+            auto event_token{ ConnectionToggleSwitch().Toggled({ this, &MainPage::ConnectionToggleSwitch_Toggled }) };
+            while (true) {
+                if (m_vpnProfile == nullptr) {
+                    profiles = co_await VpnMgmtAgent.GetProfilesAsync();
+                    for (auto const p : profiles) {
+                        if (p.ProfileName() == L"Maple" || p.ProfileName() == L"maple") {
+                            m_vpnProfile = p.try_as<VpnPlugInProfile>();
+                            break;
+                        }
                     }
                 }
-            }
-            if (m_vpnProfile == nullptr) {
-                ConnectionToggleSwitch().IsEnabled(false);
-            }
-            else {
-                ToolTipService::SetToolTip(ConnectionToggleSwitchContainer(), nullptr);
-                auto status = VpnManagementConnectionStatus::Disconnected;
-                try {
-                    status = m_vpnProfile.ConnectionStatus();
+                if (m_vpnProfile == nullptr) {
+                    ConnectionToggleSwitch().IsEnabled(false);
                 }
-                catch (...) {}
+                else {
+                    ToolTipService::SetToolTip(ConnectionToggleSwitchContainer(), nullptr);
+                    auto status = VpnManagementConnectionStatus::Disconnected;
+                    try {
+                        status = m_vpnProfile.ConnectionStatus();
+                    }
+                    catch (...) {}
 
-                ConnectionToggleSwitch().IsEnabled(status == VpnManagementConnectionStatus::Connected
-                    || status == VpnManagementConnectionStatus::Disconnected);
-                ConnectionToggleSwitch().Toggled(event_token);
-                ConnectionToggleSwitch().IsOn(status == VpnManagementConnectionStatus::Connected
-                    || status == VpnManagementConnectionStatus::Connecting);
-                event_token = ConnectionToggleSwitch().Toggled({ this, &MainPage::ConnectionToggleSwitch_Toggled });
+                    ConnectionToggleSwitch().IsEnabled(status == VpnManagementConnectionStatus::Connected
+                        || status == VpnManagementConnectionStatus::Disconnected);
+                    ConnectionToggleSwitch().Toggled(event_token);
+                    ConnectionToggleSwitch().IsOn(status == VpnManagementConnectionStatus::Connected
+                        || status == VpnManagementConnectionStatus::Connecting);
+                    event_token = ConnectionToggleSwitch().Toggled({ this, &MainPage::ConnectionToggleSwitch_Toggled });
+                }
+                co_await 1s;
+                co_await resume_foreground(Dispatcher());
             }
-            co_await 1s;
-            co_await resume_foreground(Dispatcher());
+        }
+        catch (...)
+        {
+            UI::NotifyException(L"Checking VPN status");
         }
     }
 }

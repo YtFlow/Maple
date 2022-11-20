@@ -14,6 +14,7 @@ namespace winrt::Maple_App::implementation
 {
     constexpr wchar_t const* CONFIG_ROOT_VIRTUAL_HOSTW = L"http://maple-monaco-editor-config-root.com/";
     constexpr char const* CONFIG_ROOT_VIRTUAL_HOST = "http://maple-monaco-editor-config-root.com/";
+    constexpr wchar_t const* WEBVIEW_EDITOR_URL = L"http://maple-monaco-editor-app-root.com/MonacoEditor/editor.html";
     enum class MonacoEditPageWebViewState
     {
         Uninitialized,
@@ -25,9 +26,7 @@ namespace winrt::Maple_App::implementation
         MonacoEditPage();
 
         fire_and_forget OnNavigatedTo(NavigationEventArgs const& e);
-        fire_and_forget OnNavigatedFrom(NavigationEventArgs const& e);
         fire_and_forget Page_Loaded(IInspectable const& sender, RoutedEventArgs const& e);
-        void Page_Unloaded(IInspectable const& sender, RoutedEventArgs const& e);
         fire_and_forget WebView_WebMessageReceived(MUXC::WebView2 const& sender, CoreWebView2WebMessageReceivedEventArgs const& args);
 
         inline static std::function<IAsyncAction()> SaveModifiedContent{ nullptr };
@@ -40,6 +39,7 @@ namespace winrt::Maple_App::implementation
         MonacoEditPageWebViewState m_webviewState{ MonacoEditPageWebViewState::Uninitialized };
         std::coroutine_handle<> m_fileSaveHandle{ nullptr };
         hstring m_currentFileName{};
+        std::string m_currentSavingFileName{};
     };
 }
 

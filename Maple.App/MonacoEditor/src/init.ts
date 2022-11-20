@@ -85,6 +85,10 @@ function initLang() {
             }
         } else {
             const res = await fetch(url)
+            if (!res.ok) {
+                console.error('failed to load file', url, res.status, res.statusText)
+                return
+            }
             const text = await res.text()
 
             let model: monaco.editor.ITextModel
