@@ -8,6 +8,7 @@ import { referenceProvider, renameProvider } from './reference'
 import { hoverProvider } from './hover'
 import { reportEditorReady, saveFile } from './rpc'
 import { Mutex } from './mutex'
+import { documentSymbolProvider } from './symbol'
 
 declare global {
     interface Window {
@@ -35,14 +36,17 @@ function initLang() {
     };
 
     document.getElementById('loading')!.style.display = 'none'
-    monaco.languages.register({ id: 'leafConf' })
-    monaco.languages.setMonarchTokensProvider('leafConf', monarchTokenProvider)
-    monaco.languages.registerCompletionItemProvider('leafConf', completionProvider)
-    monaco.languages.registerFoldingRangeProvider('leafConf', foldingRangeProvider)
-    monaco.languages.registerDefinitionProvider('leafConf', definitionProvider)
-    monaco.languages.registerReferenceProvider('leafConf', referenceProvider)
-    monaco.languages.registerRenameProvider('leafConf', renameProvider)
-    monaco.languages.registerHoverProvider('leafConf', hoverProvider)
+
+    const leafConfLangId = 'leafConf'
+    monaco.languages.register({ id: leafConfLangId })
+    monaco.languages.setMonarchTokensProvider(leafConfLangId, monarchTokenProvider)
+    monaco.languages.registerCompletionItemProvider(leafConfLangId, completionProvider)
+    monaco.languages.registerFoldingRangeProvider(leafConfLangId, foldingRangeProvider)
+    monaco.languages.registerDefinitionProvider(leafConfLangId, definitionProvider)
+    monaco.languages.registerReferenceProvider(leafConfLangId, referenceProvider)
+    monaco.languages.registerRenameProvider(leafConfLangId, renameProvider)
+    monaco.languages.registerHoverProvider(leafConfLangId, hoverProvider)
+    monaco.languages.registerDocumentSymbolProvider(leafConfLangId, documentSymbolProvider)
 
     const editor = monaco.editor.create(document.getElementById('container')!, {
         wordBasedSuggestions: false,
