@@ -364,6 +364,11 @@
       <DeploymentContent>true</DeploymentContent>
       <DestinationFolders>$(OutDir)/Config</DestinationFolders>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="Config\minimal.conf">
+      <FileType>Document</FileType>
+      <DeploymentContent>true</DeploymentContent>
+      <DestinationFolders>$(OutDir)/Config</DestinationFolders>
+    </CopyFileToFolders>
     <None Include="Maple.App_TemporaryKey.pfx" />
     <_WildCardCopyFileToFolders Include="MonacoEditor\dist\editor*.js" />
     <_WildCardCopyFileToFolders Include="MonacoEditor\dist\editor.html" />
