@@ -12,12 +12,13 @@ A lightweight Universal Windows proxy app based on https://github.com/eycorsican
    - Rule system based on IP, GeoIP and domain name
    - External rules from GeoIP database and V2Ray [Domain List Community](https://github.com/v2fly/domain-list-community)
 - Configuration management
+- Monaco-based conf editor with IntelliSence support
 - Outbound network adapter selection
 - UWP VPN Platform as TUN provider
 
 ## Screenshots
 
-![Settings Page](image/screenshot-setting1.png?raw=true)
+![Settings Page with IntelliSense demo](image/screenshot-setting-editor-intellisense.png?raw=true)
 
 ## Getting Started
 
@@ -54,21 +55,31 @@ Maple as a UWP app is distributed for sideloading only. When installed, it acts 
 - In Windows 11, select the battery, network, or volume icon to open the Quick Settings panel. Find **Maple** in VPN panel and connect, or
 - In Windows 10, select the Network  icon on the taskbar, and click Maple. In [Windows Settings](	ms-settings:network-vpn) app, select **Maple**, and then Connect.  
 
-*Note: Modifying the current configuration file while VPN is connected will take effect immediately.*
+<del>*Note: Modifying the current configuration file while VPN is connected will take effect immediately.*</del> Hot reloading may be removed in a future release.
 
 ## TODO
 
-- <del>VPN lifecycle management on Maple UI</del>
-- Better editing experience
-- Log collection (currently logs are sent to Visual Studio Output window for debugging only)
-- <del>`external` entries</del>
-- VPN On Demand
-- Configurable routing entries
-- IPv6 support
+- [x] VPN lifecycle management on Maple UI
+- [x] Better editing experience
+- [x] `external` entries
+- [ ] Custom configuration folder location
+- [ ] Log collection (currently logs are sent to Visual Studio Output window for debugging only)
+- [ ] Pluggable Leaf core binary
+- [ ] VPN On Demand
+- [ ] Configurable routing entries
+- [ ] IPv6 support
 
 ## Build
 
-To build Leaf and Maple, a Rust `nightly-x86_64-pc-windows-msvc` toolchain, Windows 10 SDK 10.0.22000 and Visual Studio 2022 with C++ Development Workflow are required. [C++/WinRT Visual Studio extension](https://marketplace.visualstudio.com/items?itemName=CppWinRTTeam.cppwinrt101804264) must be installed to generate Windows Metadata.
+To build Leaf and Maple, you will need:
+
+- a Rust `nightly-x86_64-pc-windows-msvc` toolchain
+- Windows 10 SDK 10.0.22000
+- Visual Studio 2022 with C++ Development Workflow
+   -  [C++/WinRT Visual Studio extension](https://marketplace.visualstudio.com/items?itemName=CppWinRTTeam.cppwinrt101804264) must be installed to generate Windows Metadata.
+- Node.js 19.x or higher
+
+Build steps:
 
 1. **Recursively** clone this repository.
 2. Open a PowerShell Prompt.
@@ -76,6 +87,8 @@ To build Leaf and Maple, a Rust `nightly-x86_64-pc-windows-msvc` toolchain, Wind
 4. `cargo build -p leaf-ffi -Z build-std=std,panic_abort --target x86_64-uwp-windows-msvc`.  
    For Release builds, use `cargo build -p leaf-ffi -Z build-std=std,panic_abort --target x86_64-uwp-windows-msvc --release`.  
    See also https://github.com/eycorsican/leaf#build .
-5. Open `Maple.sln` in Visual Studio.
-6. Build Solution.
+5. Change working directory to `Maple.App\MonacoEditor`.
+6. Build Monaco editor and language support: `npm install && npm run build`.
+7. Open `Maple.sln` in Visual Studio.
+8. Build Solution.
 
