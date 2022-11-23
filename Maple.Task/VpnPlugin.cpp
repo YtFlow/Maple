@@ -2,6 +2,7 @@
 #include "VpnPlugin.h"
 #include "winrt/Windows.Storage.h"
 #include "winrt/Windows.Storage.Streams.h"
+#include "winrt/Windows.Storage.AccessCache.h"
 
 extern "C" void* lwip_strerr(uint8_t) {
     return (void*)(const char*)"";
@@ -15,6 +16,7 @@ namespace winrt::Maple_Task::implementation
     using Windows::Storage::Streams::IOutputStream;
     using namespace Windows::Networking::Vpn;
     using namespace Windows::Storage;
+    using namespace Windows::Storage::AccessCache;
 
     extern "C" {
         typedef void(__cdecl* netstack_cb)(uint8_t*, size_t, void*);
@@ -110,12 +112,42 @@ namespace winrt::Maple_Task::implementation
             return;
         }
 
-        const auto& confPathW = localProperties.TryLookup(CONFIG_PATH_SETTING_KEY).try_as<hstring>().value_or(L"");
-        const auto& confPath = winrt::to_string(confPathW);
+        const auto confPathW = localProperties.TryLookup(CONFIG_PATH_SETTING_KEY).try_as<hstring>().value_or(L"");
+        const auto confPath = winrt::to_string(confPathW);
+        StorageFolder folder{ nullptr };
+        try {
+            folder = StorageApplicationPermissions::FutureAccessList().GetFolderAsync(ConfigFolderAccessListKey).get();
+        }
+        catch (hresult_invalid_argument const&) {}
+        Leaf* m_leaf{};
         thread_local std::vector<HostName> dnsHosts{};
-        m_leaf = run_leaf(confPath.data(), [](const char* dns) {
-            dnsHosts.push_back(HostName{ to_hstring(dns) });
-            });
+        if (folder)
+        {
+            if (auto const pos = confPath.rfind('\\'); pos != std::string::npos)
+            {
+                auto const file = folder.GetFileAsync(to_hstring(confPath.substr(pos + 1))).get();
+                auto const text = FileIO::ReadBufferAsync(file).get();
+                auto const len = text.Length();
+                uint8_t* textPtr{};
+                check_hresult(text.as<IBufferByteAccess>()->Buffer(&textPtr));
+                m_leaf = uwp_run_leaf_with_config_content(reinterpret_cast<const char*>(textPtr), len,
+                    [](const char* dns) {
+                        dnsHosts.push_back(HostName{ to_hstring(dns) });
+                    });
+            }
+            else
+            {
+                channel.TerminateConnection(L"Config folder has been changed. Please reset the default configuration file.");
+                return;
+            }
+        }
+        else
+        {
+            m_leaf = uwp_run_leaf(confPath.data(), [](const char* dns) {
+                dnsHosts.push_back(HostName{ to_hstring(dns) });
+                });
+        }
+
         if (m_leaf == nullptr) {
             channel.TerminateConnection(L"Error initializing Leaf runtime.\r\nPlease check your configuration file and default interface.\r\nPlease make sure all associated files (.dat, .mmdb, .cer) exist.");
             StopLeaf();
@@ -145,7 +177,7 @@ namespace winrt::Maple_Task::implementation
 
         auto leafHandle = m_leaf;
         if (leafHandle != nullptr) {
-            stop_leaf(leafHandle);
+            uwp_stop_leaf(leafHandle);
             m_leaf = nullptr;
         }
 

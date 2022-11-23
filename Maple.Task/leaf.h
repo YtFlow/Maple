@@ -2,8 +2,9 @@
 
 extern "C" {
     typedef void Leaf;
-    Leaf* run_leaf(const char* path, void on_dns(const char*));
-    void stop_leaf(Leaf* leaf);
+    Leaf* uwp_run_leaf(const char* path, void on_dns(const char*));
+    Leaf* uwp_run_leaf_with_config_content(const char* config, size_t len, void on_dns(const char*));
+    void uwp_stop_leaf(Leaf* leaf);
 
     typedef void NetStackHandle;
     typedef int32_t NetStackSendResult;

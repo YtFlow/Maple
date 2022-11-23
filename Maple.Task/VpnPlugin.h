@@ -10,6 +10,7 @@ namespace winrt::Maple_Task::implementation
 {
     static const hstring CONFIG_PATH_SETTING_KEY = L"CONFIG_PATH";
     static const hstring NETIF_SETTING_KEY = L"NETIF";
+    static constexpr std::wstring_view ConfigFolderAccessListKey = L"configFolder";
     struct VpnPlugin : implements<VpnPlugin, Windows::Networking::Vpn::IVpnPlugIn>
     {
         VpnPlugin() = default;
@@ -30,6 +31,6 @@ namespace winrt::Maple_Task::implementation
         std::queue<std::vector<uint8_t>> m_decapQueue{};
     };
     static const uint8_t dummyArr[] = { 0 };
-    static const auto dummyBuffer = winrt::make<CustomBuffer>(const_cast<uint8_t *>(static_cast<const uint8_t *>(dummyArr)), static_cast<uint32_t>(sizeof(dummyArr)));
+    static const auto dummyBuffer = winrt::make<CustomBuffer>(const_cast<uint8_t*>(static_cast<const uint8_t*>(dummyArr)), static_cast<uint32_t>(sizeof(dummyArr)));
     static auto VpnPluginInstance = winrt::make_self<VpnPlugin>();
 }
