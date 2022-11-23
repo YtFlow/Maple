@@ -15,6 +15,7 @@
 
     <Page.Resources>
         <maple_app:DateTimeConverter x:Key="DateTimeConverter"/>
+        <maple_app:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <pickers:FileOpenPicker x:Key="ImportFilePicker" x:Name="ImportFilePicker"/>
     </Page.Resources>
 
@@ -211,12 +212,57 @@
                                 </TextBlock>
                                 <Button Content="Generate Profile" Click="GenerateProfileButton_Click"/>
 
+                                <TextBlock Margin="0, 18" Text="Config Folder" Style="{ThemeResource TitleTextBlockStyle}"/>
+                                <TextBlock
+                                    Margin="0, 0, 0, 8"
+                                    Text="Using app built-in local state."
+                                    TextWrapping="WrapWholeWords"
+                                    Visibility="{x:Bind UsingDefaultConfigFolder, Mode=OneWay}"/>
+                                <TextBlock
+                                    Margin="0, 0, 0, 18"
+                                    Text="Using custom configuration folder."
+                                    TextWrapping="WrapWholeWords"
+                                    Visibility="{x:Bind
+                                        UsingDefaultConfigFolder,
+                                        Converter={StaticResource BoolToVisibilityConverter},
+                                        ConverterParameter=x:True,
+                                        Mode=OneWay}"/>
+                                <TextBlock
+                                    Margin="0, 0, 0, 8"
+                                    Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}"
+                                    TextWrapping="WrapWholeWords">
+                                    Specify a folder for Maple and Leaf to find configuration files, external rule databases and TLS certificates.
+                                </TextBlock>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Select Folder" Click="ConfigFolderSelectButton_Click"/>
+                                    <Button 
+                                        Margin="4, 0, 0, 0"
+                                        Content="Reset to Default"
+                                        Visibility="{x:Bind
+                                            UsingDefaultConfigFolder,
+                                            Mode=OneWay,
+                                            Converter={StaticResource BoolToVisibilityConverter},
+                                            ConverterParameter=x:True}"
+                                        Click="ConfigFolderResetButton_Click"/>
+                                </StackPanel>
+                                <TextBlock
+                                    x:Name="CustomConfigFolderPathText"
+                                    Margin="0, 4, 0, 0"
+                                    TextWrapping="Wrap"
+                                    IsTextSelectionEnabled="True"
+                                    Visibility="{x:Bind
+                                        UsingDefaultConfigFolder,
+                                        Converter={StaticResource BoolToVisibilityConverter},
+                                        ConverterParameter=x:True,
+                                        Mode=OneWay}"
+                                    />
+
                                 <TextBlock Margin="0, 18" Text="About" Style="{ThemeResource TitleTextBlockStyle}"/>
                                 <HyperlinkButton Padding="0" Content="Homepage" NavigateUri="https://github.com/YtFlow/Maple"/>
                                 <HyperlinkButton Padding="0" Content="Report Issues" NavigateUri="https://github.com/YtFlow/Maple/issues"/>
                                 <HyperlinkButton Padding="0" Content="License" NavigateUri="https://github.com/YtFlow/Maple/blob/main/LICENSE"/>
 
-                                <TextBlock Margin="0, 20, 0, 0" TextWrapping="WrapWholeWords">
+                                <TextBlock Margin="0, 20, 0, 40" TextWrapping="WrapWholeWords">
                                     <Run>This product contains a</Run>
                                     <Hyperlink NavigateUri="https://github.com/YtFlow/leaf" TextDecorations="None">
                                         <Run>modified version</Run>

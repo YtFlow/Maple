@@ -8,8 +8,10 @@ namespace Maple_App
         MainPage();
 
         static Windows.UI.Xaml.DependencyProperty ConfigItemsProperty{ get; };
+        static Windows.UI.Xaml.DependencyProperty UsingDefaultConfigFolderProperty{ get; };
 
         Windows.Foundation.Collections.IObservableVector<ConfigViewModel> ConfigItems{ get; };
+        Boolean UsingDefaultConfigFolder{ get; };
         Windows.UI.Xaml.Controls.ListView ConfigListView{ get; };
     }
 }

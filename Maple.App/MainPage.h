@@ -4,6 +4,7 @@
 #include "Model/ConfigViewModel.h"
 
 #include <winrt/Windows.Networking.Vpn.h>
+#include "ConfigUtil.h"
 
 using namespace winrt;
 using namespace Windows::ApplicationModel::Core;
@@ -34,9 +35,11 @@ namespace winrt::Maple_App::implementation
         MainPage();
 
         static DependencyProperty ConfigItemsProperty();
+        static DependencyProperty UsingDefaultConfigFolderProperty();
         IObservableVector<Maple_App::ConfigViewModel> ConfigItems();
+        bool UsingDefaultConfigFolder();
 
-        void Page_Loaded(IInspectable const& sender, RoutedEventArgs const& e);
+        fire_and_forget Page_Loaded(IInspectable const& sender, RoutedEventArgs const& e);
         void CoreTitleBar_LayoutMetricsChanged(CoreApplicationViewTitleBar const& sender, IInspectable const& args);
         void CoreWindow_Activated(IInspectable const& sender, WindowActivatedEventArgs const& args);
         void ConfigSetAsDefaultMenuItem_Click(IInspectable const& sender, RoutedEventArgs const& e);
@@ -58,12 +61,21 @@ namespace winrt::Maple_App::implementation
         void MainSplitView_PaneClosing(SplitView const& sender, SplitViewPaneClosingEventArgs const& args);
         fire_and_forget GenerateProfileButton_Click(IInspectable const& sender, RoutedEventArgs const& e);
         fire_and_forget ConnectionToggleSwitch_Toggled(IInspectable const& sender, RoutedEventArgs const& e);
+        fire_and_forget ConfigFolderSelectButton_Click(IInspectable const& sender, RoutedEventArgs const& e);
+        void ConfigFolderResetButton_Click(IInspectable const& sender, RoutedEventArgs const& e);
 
     private:
         inline static DependencyProperty m_configItemsProperty =
             DependencyProperty::Register(
                 L"ConfigItems",
                 xaml_typename<IObservableVector<Maple_App::ConfigViewModel>>(),
+                xaml_typename<Maple_App::MainPage>(),
+                nullptr
+            );
+        inline static DependencyProperty m_usingDefaultConfigFolderProperty =
+            DependencyProperty::Register(
+                L"UsingDefaultConfigFolder",
+                xaml_typename<bool>(),
                 xaml_typename<Maple_App::MainPage>(),
                 nullptr
             );
@@ -80,9 +92,9 @@ namespace winrt::Maple_App::implementation
         IStorageFolder m_configFolder{ nullptr };
         Maple_App::ConfigViewModel m_defaultConfig{ nullptr };
         VpnPlugInProfile m_vpnProfile{ nullptr };
+        Pickers::FolderPicker m_configFolderPicker{};
 
         static IAsyncAction NotifyUser(const hstring& message);
-        static IAsyncOperation<IStorageFolder> InitializeConfigFolder();
         static IAsyncOperation<StorageFile> CopyDefaultConfig(const IStorageFolder& configFolder, std::wstring_view path, const hstring& desiredName);
 
         void RequestRenameItem(const Maple_App::ConfigViewModel& item);
@@ -94,7 +106,7 @@ namespace winrt::Maple_App::implementation
         template<ConvertableToIStorageItem T>
         IAsyncAction ImportFiles(const IVectorView<T>& items) {
             const auto lifetime = get_strong();
-            const auto& targetDir = co_await InitializeConfigFolder();
+            const auto& targetDir = co_await ConfigUtil::GetConfigFolder();
             // TODO: concurrency
             for (const auto& item : items) {
                 const auto& file = item.try_as<IStorageFile>();

@@ -32,14 +32,15 @@ namespace winrt::Maple_App::implementation
         inline static std::function<IAsyncAction()> SaveModifiedContent{ nullptr };
     private:
         auto const static inline packagePath = Windows::ApplicationModel::Package::Current().InstalledPath();
-        auto const static inline configPath = Windows::Storage::ApplicationData::Current().LocalFolder().Path() + L"\\config";
 
         IAsyncAction initializeWebView();
 
+        event_token m_webviewResourceRequestedEventHandle{};
         MonacoEditPageWebViewState m_webviewState{ MonacoEditPageWebViewState::Uninitialized };
         std::coroutine_handle<> m_fileSaveHandle{ nullptr };
         hstring m_currentFileName{};
         std::string m_currentSavingFileName{};
+        hstring m_lastConfigFolderPath{};
     };
 }
 

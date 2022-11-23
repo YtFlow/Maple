@@ -148,10 +148,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Converter\BoolToVisibilityConverter.h">
+      <DependentUpon>Converter\BoolToVisibilityConverter.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="CertPage.h">
       <DependentUpon>CertPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="ConfigUtil.h" />
     <ClInclude Include="Converter\DateTimeConverter.h">
       <DependentUpon>Converter\DateTimeConverter.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -272,10 +277,15 @@
     <Image Include="Assets\Wide310x150Logo.scale-400.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Converter\BoolToVisibilityConverter.cpp">
+      <DependentUpon>Converter\BoolToVisibilityConverter.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="CertPage.cpp">
       <DependentUpon>CertPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="ConfigUtil.cpp" />
     <ClCompile Include="Converter\DateTimeConverter.cpp">
       <DependentUpon>Converter\DateTimeConverter.idl</DependentUpon>
       <SubType>Code</SubType>
@@ -319,6 +329,9 @@
   <ItemGroup>
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="Converter\BoolToVisibilityConverter.idl">
+      <SubType>Designer</SubType>
     </Midl>
     <Midl Include="CertPage.idl">
       <DependentUpon>CertPage.xaml</DependentUpon>

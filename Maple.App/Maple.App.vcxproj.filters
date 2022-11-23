@@ -1,25 +1,32 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ApplicationDefinition Include="App.xaml" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="UI.cpp" />
+    <ClCompile Include="UI.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfigUtil.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Converter\BoolToVisibilityConverter.cpp">
+      <Filter>Converter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="leaf.h" />
-    <ClInclude Include="UI.h" />
+    <ClInclude Include="UI.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="ConfigUtil.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Converter\BoolToVisibilityConverter.h">
+      <Filter>Converter</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Assets\LockScreenLogo.scale-200.png" />
-    <Image Include="Assets\SplashScreen.scale-200.png" />
-    <Image Include="Assets\Square150x150Logo.scale-200.png" />
-    <Image Include="Assets\Square44x44Logo.scale-200.png" />
-    <Image Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
-    <Image Include="Assets\Wide310x150Logo.scale-200.png" />
     <Image Include="Assets\SmallTile.scale-100.png">
       <Filter>Assets</Filter>
     </Image>
@@ -155,18 +162,50 @@
     <Image Include="Assets\StoreLogo.scale-400.png">
       <Filter>Assets</Filter>
     </Image>
+    <Image Include="Assets\SplashScreen.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Square44x44Logo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Square150x150Logo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\Wide310x150Logo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
+    <Image Include="Assets\LockScreenLogo.scale-200.png">
+      <Filter>Assets</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" />
   </ItemGroup>
   <ItemGroup>
-    <CopyFileToFolders Include="Config\default.conf" />
-    <CopyFileToFolders Include="Config\default.json" />
+    <CopyFileToFolders Include="Config\default.conf">
+      <Filter>Config</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Config\default.json">
+      <Filter>Config</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Config\minimal.conf">
+      <Filter>Config</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="Converter\DateTimeConverter.idl" />
-    <Midl Include="Model\ConfigViewModel.idl" />
     <Midl Include="Model\Netif.idl" />
+    <Midl Include="Model\ConfigViewModel.idl">
+      <Filter>Model</Filter>
+    </Midl>
+    <Midl Include="Converter\DateTimeConverter.idl">
+      <Filter>Converter</Filter>
+    </Midl>
+    <Midl Include="Converter\BoolToVisibilityConverter.idl">
+      <Filter>Converter</Filter>
+    </Midl>
   </ItemGroup>
   <ItemGroup>
     <None Include="PropertySheet.props" />
@@ -174,16 +213,48 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="EditPage.xaml" />
-    <Page Include="MainPage.xaml" />
-    <Page Include="MmdbPage.xaml" />
-    <Page Include="DatPage.xaml" />
-    <Page Include="CertPage.xaml" />
-    <Page Include="MonacoEditPage.xaml" />
+    <Page Include="CertPage.xaml">
+      <Filter>Page</Filter>
+    </Page>
+    <Page Include="DatPage.xaml">
+      <Filter>Page</Filter>
+    </Page>
+    <Page Include="EditPage.xaml">
+      <Filter>Page</Filter>
+    </Page>
+    <Page Include="MmdbPage.xaml">
+      <Filter>Page</Filter>
+    </Page>
+    <Page Include="MonacoEditPage.xaml">
+      <Filter>Page</Filter>
+    </Page>
+    <Page Include="MainPage.xaml">
+      <Filter>Page</Filter>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Assets">
       <UniqueIdentifier>{8bef39be-8f66-4942-b9f1-92668c496b3c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Converter">
+      <UniqueIdentifier>{9901d784-330d-41fc-9ca3-1e4570de2629}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Page">
+      <UniqueIdentifier>{68ac0a8f-3a19-4933-8ddd-f3de3c1af13b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{413bbf77-d776-44ef-869d-5d919f57eb25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Config">
+      <UniqueIdentifier>{284a884f-cf86-45e3-abbc-d4d06635f76e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Model">
+      <UniqueIdentifier>{36d194de-8c3a-47d3-a66b-a956b8316b80}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <Filter>Page</Filter>
+    </ApplicationDefinition>
   </ItemGroup>
 </Project>

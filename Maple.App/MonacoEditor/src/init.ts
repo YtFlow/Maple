@@ -15,6 +15,7 @@ declare global {
         mapleHostApi: {
             loadFile: (url: string) => void
             requestSaveCurrent: () => void
+            resetFiles: () => void
         }
         MonacoEnvironment?: monaco.Environment | undefined,
         chrome: {
@@ -120,7 +121,16 @@ function initLang() {
         }
         saveFile(current.url, current.text)
     }
-    window.mapleHostApi = { loadFile, requestSaveCurrent }
+    async function resetFiles() {
+        await currentFileLock.withLock((_currentFile, setCurrentFile) => {
+            setCurrentFile('')
+            editor.setModel(null)
+            monaco.editor.getModels().forEach(m => m.dispose())
+            editorStates.clear()
+        })
+        reportEditorReady()
+    }
+    window.mapleHostApi = { loadFile, requestSaveCurrent, resetFiles }
 
     window.addEventListener('focusout', () => {
         requestSaveCurrent()

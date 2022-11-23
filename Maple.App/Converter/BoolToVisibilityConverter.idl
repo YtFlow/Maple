@@ -1,0 +1,10 @@
+namespace Maple_App
+{
+    [bindable]
+    [default_interface]
+    runtimeclass BoolToVisibilityConverter : Windows.UI.Xaml.Data.IValueConverter
+    {
+        BoolToVisibilityConverter();
+    }
+}
+

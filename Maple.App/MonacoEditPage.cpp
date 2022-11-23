@@ -4,17 +4,18 @@
 #include "MonacoEditPage.g.cpp"
 #endif
 
-#include <winrt/Windows.Storage.h>
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Microsoft.Web.WebView2.Core.h>
 #include <nlohmann/json.hpp>
 
 #include "UI.h"
+#include "ConfigUtil.h"
 
 using namespace winrt;
 using namespace Windows::Storage;
 using namespace Windows::Storage::Streams;
 using namespace Windows::UI::Xaml;
+using namespace Microsoft::Web::WebView2::Core;
 
 namespace winrt::Maple_App::implementation
 {
@@ -43,15 +44,58 @@ namespace winrt::Maple_App::implementation
         }
         m_webviewState = MonacoEditPageWebViewState::AwaitingEditorReady;
         co_await webview.EnsureCoreWebView2Async();
+        if (!m_webviewResourceRequestedEventHandle)
+        {
+            webview.CoreWebView2().AddWebResourceRequestedFilter(
+                hstring(CONFIG_ROOT_VIRTUAL_HOSTW) + L"*",
+                CoreWebView2WebResourceContext::Fetch
+            );
+            webview.CoreWebView2().AddWebResourceRequestedFilter(
+                hstring(CONFIG_ROOT_VIRTUAL_HOSTW) + L"*",
+                CoreWebView2WebResourceContext::XmlHttpRequest
+            );
+            webview.CoreWebView2().AddWebResourceRequestedFilter(
+                hstring(CONFIG_ROOT_VIRTUAL_HOSTW) + L"*",
+                CoreWebView2WebResourceContext::Document
+            );
+            m_webviewResourceRequestedEventHandle = webview.CoreWebView2().WebResourceRequested(
+                [weak = weak_ref(lifetime)](auto const webview, CoreWebView2WebResourceRequestedEventArgs const e) -> fire_and_forget
+                {
+                    auto const deferral = e.GetDeferral();
+            try {
+                if (auto const self{ weak.get() }) {
+                    auto const configDir = co_await ConfigUtil::GetConfigFolder();
+                    if (configDir.Path() != self->m_lastConfigFolderPath)
+                    {
+                        co_return;
+                    }
+                    auto path = to_string(e.Request().Uri());
+                    if (auto const pos{ path.find(CONFIG_ROOT_VIRTUAL_HOST) }; pos != std::string::npos)
+                    {
+                        path = path.replace(pos, strlen(CONFIG_ROOT_VIRTUAL_HOST), "");
+                    }
+
+                    auto const file = co_await configDir.GetFileAsync(to_hstring(path));
+                    auto const fstream = co_await file.OpenReadAsync();
+                    e.Response(webview.Environment().CreateWebResourceResponse(
+                        std::move(fstream),
+                        200,
+                        L"OK",
+                        hstring(L"Content-Length: ") + to_hstring(fstream.Size()) + L"\nContent-Type: text/plain\nAccess-Control-Allow-Origin: http://maple-monaco-editor-app-root.com"
+                    ));
+                }
+            }
+            catch (...)
+            {
+                UI::NotifyException(L"Handling web requests");
+            }
+            deferral.Complete();
+                });
+        }
         webview.CoreWebView2().SetVirtualHostNameToFolderMapping(
             L"maple-monaco-editor-app-root.com",
             packagePath,
-            Microsoft::Web::WebView2::Core::CoreWebView2HostResourceAccessKind::DenyCors
-        );
-        webview.CoreWebView2().SetVirtualHostNameToFolderMapping(
-            L"maple-monaco-editor-config-root.com",
-            configPath,
-            Microsoft::Web::WebView2::Core::CoreWebView2HostResourceAccessKind::Allow
+            CoreWebView2HostResourceAccessKind::DenyCors
         );
         webview.Source(Uri{ WEBVIEW_EDITOR_URL });
     }
@@ -70,11 +114,24 @@ namespace winrt::Maple_App::implementation
             {
                 co_return;
             }
+            auto const parent = co_await param.File().GetParentAsync();
+            if (!parent)
+            {
+                UI::NotifyUser("Failed to load config folder.", L"Error: loading file");
+                co_return;
+            }
+            auto const parentPath = parent.Path();
+            if (parentPath != m_lastConfigFolderPath)
+            {
+                m_lastConfigFolderPath = parentPath;
+                m_webviewState = MonacoEditPageWebViewState::Uninitialized;
+            }
             m_currentFileName = fileName;
             switch (m_webviewState)
             {
             case MonacoEditPageWebViewState::Uninitialized:
                 co_await initializeWebView();
+                co_await lifetime->WebView().ExecuteScriptAsync(L"window.mapleHostApi.resetFiles()");
                 break;
             case MonacoEditPageWebViewState::AwaitingEditorReady:
                 break;
@@ -149,6 +206,10 @@ namespace winrt::Maple_App::implementation
             }
             else if (cmd == "save")
             {
+                if (m_webviewState != MonacoEditPageWebViewState::EditorReady)
+                {
+                    co_return;
+                }
                 std::string path{ doc["path"] };
                 if (path == m_currentSavingFileName)
                 {
@@ -156,15 +217,19 @@ namespace winrt::Maple_App::implementation
                 }
                 m_currentSavingFileName = path;
 
-                auto const configDir{ co_await ApplicationData::Current().LocalFolder().CreateFolderAsync(L"config", CreationCollisionOption::OpenIfExists) };
-                auto const configDirPath{ to_string(configDir.Path()) + "\\" };
+                auto const configDir = co_await ConfigUtil::GetConfigFolder();
+                if (configDir.Path() != m_lastConfigFolderPath)
+                {
+                    co_return;
+                }
                 if (auto const pos{ path.find(CONFIG_ROOT_VIRTUAL_HOST) }; pos != std::string::npos)
                 {
-                    path = path.replace(pos, strlen(CONFIG_ROOT_VIRTUAL_HOST), configDirPath);
+                    path = path.replace(pos, strlen(CONFIG_ROOT_VIRTUAL_HOST), "");
                 }
+                hstring fileName = to_hstring(path);
                 StorageFile file{ nullptr };
                 try {
-                    file = co_await StorageFile::GetFileFromPathAsync(to_hstring(path));
+                    file = co_await configDir.GetFileAsync(fileName);
                 }
                 catch (hresult_error const& hr)
                 {
@@ -176,13 +241,13 @@ namespace winrt::Maple_App::implementation
                 }
                 std::string const data{ doc["text"] };
                 auto const fstream = co_await file.OpenAsync(FileAccessMode::ReadWrite, StorageOpenOptions::AllowOnlyReaders);
-                fstream.Size(0);
                 try {
                     DataWriter const wr(fstream);
                     try {
                         wr.WriteBytes(array_view(reinterpret_cast <uint8_t const*>(data.data()), data.size()));
                         co_await wr.StoreAsync();
                         co_await fstream.FlushAsync().as<IAsyncOperation<bool>>();
+                        fstream.Size(data.size());
                         wr.Close();
                     }
                     catch (...)

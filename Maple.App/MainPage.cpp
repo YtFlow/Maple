@@ -61,31 +61,46 @@ namespace winrt::Maple_App::implementation
     {
         return m_configItemsProperty;
     }
+    DependencyProperty MainPage::UsingDefaultConfigFolderProperty()
+    {
+        return m_usingDefaultConfigFolderProperty;
+    }
     IObservableVector<Maple_App::ConfigViewModel> MainPage::ConfigItems()
     {
         return GetValue(m_configItemsProperty).as<IObservableVector<Maple_App::ConfigViewModel>>();
     }
-
-    void MainPage::Page_Loaded(IInspectable const&, RoutedEventArgs const&)
+    bool MainPage::UsingDefaultConfigFolder()
     {
-        const auto _ = LoadConfigs();
-        NavigationManager = SystemNavigationManager::GetForCurrentView();
-        NavigationManager.AppViewBackButtonVisibility(MainSplitView().IsPaneOpen()
-            ? AppViewBackButtonVisibility::Collapsed
-            : AppViewBackButtonVisibility::Visible);
+        return GetValue(m_usingDefaultConfigFolderProperty).try_as<bool>().value_or(false);
+    }
 
-        const auto weakThis = get_weak();
-        NavigationManager.BackRequested([weakThis](const auto&, const auto&) {
-            if (const auto self{ weakThis.get() }) {
-                self->MainSplitView().IsPaneOpen(true);
-                const auto currentVisibility = NavigationManager.AppViewBackButtonVisibility();
-                if (currentVisibility == AppViewBackButtonVisibility::Visible) {
-                    NavigationManager.AppViewBackButtonVisibility(AppViewBackButtonVisibility::Disabled);
+    fire_and_forget MainPage::Page_Loaded(IInspectable const&, RoutedEventArgs const&)
+    {
+        try {
+            const auto loadConfigsTask = LoadConfigs();
+            NavigationManager = SystemNavigationManager::GetForCurrentView();
+            NavigationManager.AppViewBackButtonVisibility(MainSplitView().IsPaneOpen()
+                ? AppViewBackButtonVisibility::Collapsed
+                : AppViewBackButtonVisibility::Visible);
+
+            const auto weakThis = get_weak();
+            NavigationManager.BackRequested([weakThis](const auto&, const auto&) {
+                if (const auto self{ weakThis.get() }) {
+                    self->MainSplitView().IsPaneOpen(true);
+                    const auto currentVisibility = NavigationManager.AppViewBackButtonVisibility();
+                    if (currentVisibility == AppViewBackButtonVisibility::Visible) {
+                        NavigationManager.AppViewBackButtonVisibility(AppViewBackButtonVisibility::Disabled);
+                    }
                 }
-            }
-            });
+                });
 
-        StartConnectionCheck();
+            StartConnectionCheck();
+            co_await loadConfigsTask;
+        }
+        catch (...)
+        {
+            UI::NotifyException(L"Loading MainPage");
+        }
     }
 
     IAsyncAction MainPage::NotifyUser(const hstring& message) {
@@ -93,17 +108,6 @@ namespace winrt::Maple_App::implementation
         dialog.Content(box_value(message));
         dialog.PrimaryButtonCommand(StandardUICommand{ StandardUICommandKind::Close });
         co_await dialog.ShowAsync();
-    }
-
-    IAsyncOperation<IStorageFolder> MainPage::InitializeConfigFolder()
-    {
-        const auto& appData = ApplicationData::Current();
-        const auto& localFolder = appData.LocalFolder();
-        auto configItem = co_await localFolder.TryGetItemAsync(L"config");
-        if (configItem == nullptr || configItem.IsOfType(StorageItemTypes::File)) {
-            configItem = co_await localFolder.CreateFolderAsync(L"config", CreationCollisionOption::ReplaceExisting);
-        }
-        co_return configItem.as<IStorageFolder>();
     }
 
     IAsyncOperation<StorageFile> MainPage::CopyDefaultConfig(const IStorageFolder& configFolder, std::wstring_view path, const hstring& desiredName)
@@ -116,7 +120,9 @@ namespace winrt::Maple_App::implementation
     {
         const auto lifetime = get_strong();
         const auto& appData = ApplicationData::Current();
-        m_configFolder = co_await InitializeConfigFolder();
+        m_configFolder = co_await ConfigUtil::GetConfigFolder();
+        SetValue(m_usingDefaultConfigFolderProperty, box_value(ConfigUtil::UsingDefaultConfigFolder()));
+        CustomConfigFolderPathText().Text(m_configFolder.Path());
         auto configFiles = co_await m_configFolder.GetFilesAsync();
         if (configFiles.Size() == 0) {
             const auto& defaultConfigDst = co_await CopyDefaultConfig(m_configFolder, DEFAULT_CONF_FILE_PATH, L"default.conf");
@@ -127,6 +133,7 @@ namespace winrt::Maple_App::implementation
         std::vector<Maple_App::ConfigViewModel> configModels;
         configModels.reserve(static_cast<size_t>(configFiles.Size()));
 
+        m_defaultConfig = nullptr;
         const auto& defaultConfigPath = appData.LocalSettings().Values().TryLookup(CONFIG_PATH_SETTING_KEY).try_as<hstring>();
         for (const auto& file : configFiles) {
             const auto isDefault = file.Path() == defaultConfigPath;
@@ -170,9 +177,10 @@ namespace winrt::Maple_App::implementation
                 return;
             }
             ApplicationData::Current().LocalSettings().Values().Insert(CONFIG_PATH_SETTING_KEY, box_value(item.File().Path()));
-            m_defaultConfig.IsDefault(false);
             item.IsDefault(true);
-            m_defaultConfig = item;
+            if (auto const oldConfig{ std::exchange(m_defaultConfig, item) }) {
+                oldConfig.IsDefault(false);
+            }
         }
         catch (...)
         {
@@ -239,8 +247,8 @@ namespace winrt::Maple_App::implementation
             if (ConfigListView().SelectedItem() == item) {
                 ConfigListView().SelectedIndex(ConfigListView().SelectedIndex() == 0 ? 1 : 0);
             }
-            configItems.RemoveAt(index);
             co_await item.Delete();
+            configItems.RemoveAt(index);
             if (configItems.Size() == 0) {
                 LoadConfigs();
             }
@@ -340,9 +348,14 @@ namespace winrt::Maple_App::implementation
             if (item == nullptr) {
                 item = ConfigListView().SelectedItem().as<Maple_App::ConfigViewModel>();
             }
-            const auto& file = item.File();
-            const auto& parent = co_await file.GetParentAsync();
-            const auto& newFile = co_await file.CopyAsync(parent, file.Name(), NameCollisionOption::GenerateUniqueName);
+            const auto file = item.File();
+            const auto parent = co_await file.GetParentAsync();
+            if (!parent)
+            {
+                UI::NotifyUser("Failed to load config folder.", L"Error: duplicating");
+                co_return;
+            }
+            const auto newFile = co_await file.CopyAsync(parent, file.Name(), NameCollisionOption::GenerateUniqueName);
             ConfigItems().Append(co_await ConfigViewModel::FromFile(newFile, false));
         }
         catch (...)
@@ -402,6 +415,12 @@ namespace winrt::Maple_App::implementation
     void MainPage::ConfigListView_SelectionChanged(IInspectable const&, SelectionChangedEventArgs const& e)
     {
         try {
+            if (e.AddedItems().Size() == 0 && e.RemovedItems().Size() > 0)
+            {
+                MainContentFrame().BackStack().Clear();
+                MainContentFrame().Content(nullptr);
+                return;
+            }
             const auto& item = e.AddedItems().First().Current();
             auto targetPage = xaml_typename<MonacoEditPage>();
             const auto& config = item.try_as<Maple_App::ConfigViewModel>();
@@ -603,4 +622,40 @@ namespace winrt::Maple_App::implementation
             UI::NotifyException(L"Checking VPN status");
         }
     }
+
+    fire_and_forget MainPage::ConfigFolderSelectButton_Click(IInspectable const&, RoutedEventArgs const&)
+    {
+        try
+        {
+            m_configFolderPicker.FileTypeFilter().Clear();
+            m_configFolderPicker.FileTypeFilter().Append(L"*");
+            auto folder = co_await m_configFolderPicker.PickSingleFolderAsync();
+            if (!folder)
+            {
+                co_return;
+            }
+            co_await folder.GetItemsAsync(); // Try to read something to see if is OK
+            ConfigUtil::SetConfigFolder(std::move(folder));
+            LoadConfigs();
+        }
+        catch (...)
+        {
+            UI::NotifyException(L"Select Config Folder");
+        }
+    }
+
+    void MainPage::ConfigFolderResetButton_Click(IInspectable const&, RoutedEventArgs const&)
+    {
+        try
+        {
+            ConfigUtil::SetConfigFolder(nullptr);
+            LoadConfigs();
+        }
+        catch (...)
+        {
+            UI::NotifyException(L"Reset Config Folder");
+        }
+    }
+
 }
+
