@@ -119,7 +119,6 @@ namespace winrt::Maple_Task::implementation
             folder = StorageApplicationPermissions::FutureAccessList().GetFolderAsync(ConfigFolderAccessListKey).get();
         }
         catch (hresult_invalid_argument const&) {}
-        Leaf* m_leaf{};
         thread_local std::vector<HostName> dnsHosts{};
         if (folder)
         {
