@@ -62,9 +62,9 @@ Maple as a UWP app is distributed for sideloading only. When installed, it acts 
 - [x] VPN lifecycle management on Maple UI
 - [x] Better editing experience
 - [x] `external` entries
-- [ ] Custom configuration folder location
+- [x] Custom configuration folder location
 - [ ] Log collection (currently logs are sent to Visual Studio Output window for debugging only)
-- [ ] Pluggable Leaf core binary
+- [ ] Unsandboxed Leaf core ([#29](https://github.com/YtFlow/Maple/issues/29))
 - [ ] VPN On Demand
 - [ ] Configurable routing entries
 - [ ] IPv6 support
