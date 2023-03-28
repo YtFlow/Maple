@@ -243,6 +243,13 @@ function completeProxy(
                 insertText: c,
                 range,
             }))
+        case facts.PROXY_PROPERTY_KEY_OBFS:
+            return facts.KNOWN_OBFS_METHODS.map(o => ({
+                label: o,
+                kind: monaco.languages.CompletionItemKind.EnumMember,
+                insertText: o,
+                range,
+            }))
         case facts.PROXY_PROPERTY_KEY_WS:
         case facts.PROXY_PROPERTY_KEY_TLS:
         case facts.PROXY_PROPERTY_KEY_AMUX:

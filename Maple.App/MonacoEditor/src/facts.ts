@@ -82,14 +82,18 @@ export const PROTOCOL_VMESS = 'vmess'
 export const KNOWN_AEAD_CIPHERS = ['chacha20-poly1305', 'chacha20-ietf-poly1305', 'aes-256-gcm', 'aes-128-gcm']
 export const KNOWN_AEAD_CIPHERS_SET = new Set(KNOWN_AEAD_CIPHERS)
 
+export const KNOWN_OBFS_METHOD_HTTP = 'http'
+export const KNOWN_OBFS_METHOD_TLS = 'tls'
+export const KNOWN_OBFS_METHODS = [KNOWN_OBFS_METHOD_HTTP, KNOWN_OBFS_METHOD_TLS]
+
 export const PROXY_PROTOCOLS: IProxyProtocolDef[] = [
     { name: PROTOCOL_DIRECT, desc: 'Forward requests directly without going through any proxies.', snippet: 'direct' },
     { name: PROTOCOL_REJECT, desc: 'Close connections immediately.', snippet: 'reject' },
     { name: PROTOCOL_REJECT_DROP, desc: 'Close connections immediately. Alias for `' + PROTOCOL_REJECT + '`.', snippet: 'drop' },
     { name: PROTOCOL_REDIRECT, desc: 'Rewrite connection destinations to a pre-defined address.', snippet: 'redirect, ${1:host}, ${2:port}' },
     { name: PROTOCOL_SOCKS, desc: 'A SOCKS5 proxy.', snippet: 'socks, ${1:host}, ${2:port}' },
-    { name: PROTOCOL_SHADOWSOCKS, desc: 'A Shadowsocks proxy.', snippet: `shadowsocks, \${1:host}, \${2:port}, encrypt-method=\${3|${KNOWN_AEAD_CIPHERS.join(',')}|}, password=\${4:password}` },
-    { name: PROTOCOL_SHADOWSOCKS_SS, desc: 'A Shadowsocks proxy. Alias for `' + PROTOCOL_SHADOWSOCKS + '`.', snippet: `ss, \${1:host}, \${2:port}, encrypt-method=\${3|${KNOWN_AEAD_CIPHERS.join(',')}|}, password=\${4:password}` },
+    { name: PROTOCOL_SHADOWSOCKS, desc: 'A Shadowsocks proxy with optional obfuscation.', snippet: `shadowsocks, \${1:host}, \${2:port}, encrypt-method=\${3|${KNOWN_AEAD_CIPHERS.join(',')}|}, password=\${4:password}` },
+    { name: PROTOCOL_SHADOWSOCKS_SS, desc: 'A Shadowsocks proxy with optional obfuscation. Alias for `' + PROTOCOL_SHADOWSOCKS + '`.', snippet: `ss, \${1:host}, \${2:port}, encrypt-method=\${3|${KNOWN_AEAD_CIPHERS.join(',')}|}, password=\${4:password}` },
     { name: PROTOCOL_TROJAN, desc: 'A Trojan proxy.\n\nCompatible with Trojan-GFW and Trojan-Go with `ws` enabled.', snippet: 'trojan, ${1:ip}, ${2:port}, password=${3:password}, sni=${4:hostname}' },
     { name: PROTOCOL_VMESS, desc: 'A VMess proxy with optional WebSocket and TLS transports.', snippet: 'vmess, ${1:host}, ${2:port}, username=${3:username}' },
 ]
@@ -112,6 +116,9 @@ export const PROXY_PROPERTY_KEY_WS_PATH = 'ws-path'
 export const PROXY_PROPERTY_KEY_WS_HOST = 'ws-host'
 export const PROXY_PROPERTY_KEY_TLS = 'tls'
 export const PROXY_PROPERTY_KEY_TLS_CERT = 'tls-cert'
+export const PROXY_PROPERTY_KEY_OBFS = 'obfs'
+export const PROXY_PROPERTY_KEY_OBFS_HOST = 'obfs-host'
+export const PROXY_PROPERTY_KEY_OBFS_PATH = 'obfs-path'
 export const PROXY_PROPERTY_KEY_SNI = 'sni'
 export const PROXY_PROPERTY_KEY_QUIC = 'quic'
 export const PROXY_PROPERTY_KEY_AMUX = 'amux'
@@ -121,13 +128,16 @@ export const PROXY_PROPERTY_KEY_INTERFACE = 'interface'
 
 export const PROXY_PROPERTY_KEYS_DESC_MAP = new Map([
     [PROXY_PROPERTY_KEY_METHOD, `Encryption method for Shadowsocks and VMess. Possible values are \`${KNOWN_AEAD_CIPHERS.join('`, `')}\`.\n\nDefaults to \`chacha20-ietf-poly1305\`.`],
-    [PROXY_PROPERTY_KEY_USERNAME, 'User name for VMess.'],
+    [PROXY_PROPERTY_KEY_USERNAME, 'User name for VMess and SOCKS5.'],
     [PROXY_PROPERTY_KEY_PASSWORD, 'Password of the proxy server.'],
     [PROXY_PROPERTY_KEY_WS, 'Specify whether WebSocket transport should be enabled.\n\nDefaults to \`false\`.'],
     [PROXY_PROPERTY_KEY_WS_PATH, 'Path for WebSocket transport.'],
     [PROXY_PROPERTY_KEY_WS_HOST, 'Host for WebSocket transport.'],
     [PROXY_PROPERTY_KEY_TLS, 'Specify whether TLS transport should be enabled.\n\nDefaults to \`false\`.'],
     [PROXY_PROPERTY_KEY_TLS_CERT, 'Certificate file for TLS transport.'],
+    [PROXY_PROPERTY_KEY_OBFS, `Specify which obfuscation method to use. Possible values are \`${KNOWN_OBFS_METHODS.join('`, `')}\`.\n\nDefaults to \`http\`.`],
+    [PROXY_PROPERTY_KEY_OBFS_HOST, 'Specify the \`host\` parameter for obfuscation.'],
+    [PROXY_PROPERTY_KEY_OBFS_PATH, 'Specify the \`path\` parameter for `http` obfuscation.'],
     [PROXY_PROPERTY_KEY_SNI, 'Server name (SNI), or host name for TLS transport.\n\nIf omitted, the host name of the proxy server will be used.'],
     [PROXY_PROPERTY_KEY_QUIC, 'Specify whether QUIC transport should be enabled.\n\nDefaults to \`false\`.'],
     [PROXY_PROPERTY_KEY_AMUX, 'Specify whether AMUX transport should be enabled.\n\nDefaults to \`false\`.'],
@@ -146,20 +156,33 @@ export const PROXY_PROTOCOL_PROPERTY_KEY_MAP: Record<string, IProxyPropertyKeyDe
     [PROTOCOL_REJECT]: { required: new Set(), allowed: new Set() },
     [PROTOCOL_REJECT_DROP]: { required: new Set(), allowed: new Set() },
     [PROTOCOL_REDIRECT]: { required: new Set(), allowed: new Set() },
-    [PROTOCOL_SOCKS]: { required: new Set(), allowed: new Set() },
+    [PROTOCOL_SOCKS]: {
+        required: new Set(), allowed: new Set([
+            PROXY_PROPERTY_KEY_USERNAME,
+            PROXY_PROPERTY_KEY_PASSWORD,
+        ])
+    },
     [PROTOCOL_SHADOWSOCKS]: {
         required: new Set([
             PROXY_PROPERTY_KEY_METHOD,
             PROXY_PROPERTY_KEY_PASSWORD,
         ]),
-        allowed: new Set(),
+        allowed: new Set([
+            PROXY_PROPERTY_KEY_OBFS,
+            PROXY_PROPERTY_KEY_OBFS_HOST,
+            PROXY_PROPERTY_KEY_OBFS_PATH,
+        ]),
     },
     [PROTOCOL_SHADOWSOCKS_SS]: {
         required: new Set([
             PROXY_PROPERTY_KEY_METHOD,
             PROXY_PROPERTY_KEY_PASSWORD,
         ]),
-        allowed: new Set(),
+        allowed: new Set([
+            PROXY_PROPERTY_KEY_OBFS,
+            PROXY_PROPERTY_KEY_OBFS_HOST,
+            PROXY_PROPERTY_KEY_OBFS_PATH,
+        ]),
     },
     [PROTOCOL_TROJAN]: {
         required: new Set([PROXY_PROPERTY_KEY_PASSWORD]),

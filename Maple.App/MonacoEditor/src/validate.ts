@@ -359,6 +359,12 @@ function validateProxyItem(
     const argsWithKv = args.slice(firstKvArgId)
     const visitedKvs: Map<string, ILeafConfKvItem> = new Map()
     const requiredVisited = new Map([...protocolKeyDef.required].map(k => [k, false]))
+    const obfsSettings = {
+        allowed: protocolKeyDef.allowed.has(facts.PROXY_PROPERTY_KEY_OBFS),
+        methodKv: undefined as ILeafConfKvItem | undefined,
+        hostKvs: [] as ILeafConfKvItem[],
+        pathKvs: [] as ILeafConfKvItem[],
+    }
     for (const arg of argsWithKv) {
         const kv = parseKvLine(arg.text, item.lineId, arg.startCol)
         if (kv === undefined) {
@@ -433,6 +439,27 @@ function validateProxyItem(
             case facts.PROXY_PROPERTY_KEY_INTERFACE:
                 validateNonEmpty(kv.value, item.lineId, kv.valueStartCol, errors)
                 continue
+            case facts.PROXY_PROPERTY_KEY_OBFS:
+                obfsSettings.methodKv = kv
+                if (!facts.KNOWN_OBFS_METHODS.includes(kv.value)) {
+                    const allowedMethods = facts.KNOWN_OBFS_METHODS.join('", "')
+                    errors.push({
+                        severity: monaco.MarkerSeverity.Error,
+                        startLineNumber: item.lineId,
+                        startColumn: kv.valueStartCol,
+                        endLineNumber: item.lineId,
+                        endColumn: kv.valueStartCol + kv.value.length,
+                        message: `Unknown obfs method "${kv.value}". `
+                            + `Allowed values are "${allowedMethods}".`,
+                    })
+                }
+                break
+            case facts.PROXY_PROPERTY_KEY_OBFS_HOST:
+                obfsSettings.hostKvs.push(kv)
+                break
+            case facts.PROXY_PROPERTY_KEY_OBFS_PATH:
+                obfsSettings.pathKvs.push(kv)
+                break
             default:
                 isUnknownKey = true
                 errors.push({
@@ -454,6 +481,31 @@ function validateProxyItem(
                 endColumn: kv.keyStartCol + kv.key.length,
                 message: `Key "${kv.key}" is not allowed in "${protocol}" protocol.`,
             })
+        }
+    }
+    if (obfsSettings.allowed && obfsSettings.methodKv !== undefined) {
+        const { methodKv, hostKvs, pathKvs } = obfsSettings
+        if (hostKvs.length === 0) {
+            errors.push({
+                severity: monaco.MarkerSeverity.Warning,
+                startLineNumber: item.lineId,
+                startColumn: methodKv.valueStartCol,
+                endLineNumber: item.lineId,
+                endColumn: methodKv.valueStartCol + methodKv.value.length,
+                message: `"${facts.PROXY_PROPERTY_KEY_OBFS_HOST}" is required for obfuscation.`,
+            })
+        }
+        if (methodKv.value === facts.KNOWN_OBFS_METHOD_TLS) {
+            for (const pathKv of pathKvs) {
+                errors.push({
+                    severity: monaco.MarkerSeverity.Warning,
+                    startLineNumber: item.lineId,
+                    startColumn: pathKv.keyStartCol,
+                    endLineNumber: item.lineId,
+                    endColumn: pathKv.keyStartCol + pathKv.key.length,
+                    message: `"${pathKv.key}" is ignored for "${facts.KNOWN_OBFS_METHOD_TLS}" obfuscation method.`,
+                })
+            }
         }
     }
     for (const [key, visited] of requiredVisited) {
@@ -1016,15 +1068,15 @@ function validateRules(
                                 if (segs.length > 2 && segs[1] === '') {
                                     groupSegId = 2
                                     if (segs[1] === '') {
-                                    errors.push({
-                                        severity: monaco.MarkerSeverity.Error,
-                                        startLineNumber: currLineId,
-                                        startColumn: ruleItem.startCol,
-                                        endLineNumber: currLineId,
-                                        endColumn: ruleItem.startCol + ruleItem.text.length,
-                                        message: `An external site rule must have a non-empty database file name.`,
-                                    })
-                                }
+                                        errors.push({
+                                            severity: monaco.MarkerSeverity.Error,
+                                            startLineNumber: currLineId,
+                                            startColumn: ruleItem.startCol,
+                                            endLineNumber: currLineId,
+                                            endColumn: ruleItem.startCol + ruleItem.text.length,
+                                            message: `An external site rule must have a non-empty database file name.`,
+                                        })
+                                    }
                                 }
                                 if (segs[groupSegId] === '') {
                                     errors.push({
