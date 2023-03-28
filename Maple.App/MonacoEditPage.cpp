@@ -62,34 +62,34 @@ namespace winrt::Maple_App::implementation
                 [weak = weak_ref(lifetime)](auto const webview, CoreWebView2WebResourceRequestedEventArgs const e) -> fire_and_forget
                 {
                     auto const deferral = e.GetDeferral();
-            try {
-                if (auto const self{ weak.get() }) {
-                    auto const configDir = co_await ConfigUtil::GetConfigFolder();
-                    if (configDir.Path() != self->m_lastConfigFolderPath)
-                    {
-                        co_return;
-                    }
-                    auto path = to_string(e.Request().Uri());
-                    if (auto const pos{ path.find(CONFIG_ROOT_VIRTUAL_HOST) }; pos != std::string::npos)
-                    {
-                        path = path.replace(pos, strlen(CONFIG_ROOT_VIRTUAL_HOST), "");
-                    }
+                    try {
+                        if (auto const self{ weak.get() }) {
+                            auto const configDir = co_await ConfigUtil::GetConfigFolder();
+                            if (configDir.Path() != self->m_lastConfigFolderPath)
+                            {
+                                co_return;
+                            }
+                            auto path = to_string(Uri::UnescapeComponent(e.Request().Uri()));
+                            if (auto const pos{ path.find(CONFIG_ROOT_VIRTUAL_HOST) }; pos != std::string::npos)
+                            {
+                                path = path.replace(pos, strlen(CONFIG_ROOT_VIRTUAL_HOST), "");
+                            }
 
-                    auto const file = co_await configDir.GetFileAsync(to_hstring(path));
-                    auto const fstream = co_await file.OpenReadAsync();
-                    e.Response(webview.Environment().CreateWebResourceResponse(
-                        std::move(fstream),
-                        200,
-                        L"OK",
-                        hstring(L"Content-Length: ") + to_hstring(fstream.Size()) + L"\nContent-Type: text/plain\nAccess-Control-Allow-Origin: http://maple-monaco-editor-app-root.com"
-                    ));
-                }
-            }
-            catch (...)
-            {
-                UI::NotifyException(L"Handling web requests");
-            }
-            deferral.Complete();
+                            auto const file = co_await configDir.GetFileAsync(to_hstring(path));
+                            auto const fstream = co_await file.OpenReadAsync();
+                            e.Response(webview.Environment().CreateWebResourceResponse(
+                                std::move(fstream),
+                                200,
+                                L"OK",
+                                hstring(L"Content-Length: ") + to_hstring(fstream.Size()) + L"\nContent-Type: text/plain\nAccess-Control-Allow-Origin: http://maple-monaco-editor-app-root.com"
+                            ));
+                        }
+                    }
+                    catch (...)
+                    {
+                        UI::NotifyException(L"Handling web requests");
+                    }
+                    deferral.Complete();
                 });
         }
         webview.CoreWebView2().SetVirtualHostNameToFolderMapping(
