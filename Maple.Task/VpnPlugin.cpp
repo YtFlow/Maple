@@ -107,6 +107,7 @@ namespace winrt::Maple_Task::implementation
             || !SetEnvironmentVariable(L"LOG_NO_COLOR", L"true")
             || !SetEnvironmentVariable(L"OUTBOUND_INTERFACE", outNetif.data())
             || !SetEnvironmentVariable(L"CACHE_LOCATION", cacheDir.data())
+            || !SetEnvironmentVariable(L"ENABLE_IPV6", L"true")
             ) {
             channel.TerminateConnection(L"Failed to set environment variables: " + winrt::to_hstring((uint32_t)GetLastError()));
             return;

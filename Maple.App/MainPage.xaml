@@ -63,7 +63,8 @@
             Grid.ColumnSpan="3"
             DisplayMode="Overlay"
             PaneClosing="MainSplitView_PaneClosing"
-            Background="White">
+            Background="White"
+            OpenPaneLength="330">
             <SplitView.Pane>
                 <Pivot x:Name="MainPivot" PivotItemLoaded="MainPivot_PivotItemLoaded">
                     <PivotItem Header="Config" Margin="0">
@@ -188,9 +189,26 @@
                                     x:Name="NetifCombobox"
                                     HorizontalAlignment="Stretch"
                                     Margin="0, 8"
-                                    DisplayMemberPath="Desc"
                                     SelectedValuePath="Addr"
-                                    SelectionChanged="NetifCombobox_SelectionChanged"/>
+                                    SelectionChanged="NetifCombobox_SelectionChanged">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="maple_app:Netif">
+                                            <StackPanel x:Name="NetifComboboxTemplateRoot">
+                                                <TextBlock Text="{x:Bind Desc}" FontWeight="Bold" />
+                                                <TextBlock
+                                                    Text="{x:Bind IpLines}"
+                                                    Visibility="{Binding IsDropDownOpen, ElementName=NetifCombobox}" />
+                                                <TextBlock
+                                                    Text="{x:Bind IpSummary}"
+                                                    Visibility="{Binding
+                                                        IsDropDownOpen,
+                                                        ElementName=NetifCombobox,
+                                                        Converter={StaticResource BoolToVisibilityConverter},
+                                                        ConverterParameter=true}" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
 
                                 <TextBlock Margin="0, 18" Text="VPN Connection" Style="{ThemeResource TitleTextBlockStyle}"/>
                                 <TextBlock Margin="0, 0, 0, 18" TextWrapping="WrapWholeWords">

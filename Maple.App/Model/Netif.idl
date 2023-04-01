@@ -7,5 +7,7 @@ namespace Maple_App
         Netif();
         String Desc{ get; };
         String Addr{ get; };
+        String IpSummary{ get; };
+        String IpLines{ get; };
     }
 }

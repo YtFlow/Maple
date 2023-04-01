@@ -15,9 +15,33 @@ constexpr auto MAX_TRIES = 3;
 
 namespace winrt::Maple_App::implementation
 {
-    Netif::Netif(const hstring& desc, const hstring& Addr)
-        : m_desc(desc), m_addr(Addr)
+    Netif::Netif(const hstring& desc, addresses_t addresses)
+        : m_desc(desc), m_addresses(std::move(addresses))
     {
+        for (auto const& [af, a] : m_addresses)
+        {
+            if (af != AF_INET)
+            {
+                continue;
+            }
+            if (!m_addr.empty())
+            {
+                m_addr = m_addr + L",";
+            }
+            m_addr = m_addr + a;
+        }
+        for (auto const& [af, a] : m_addresses)
+        {
+            if (af != AF_INET6)
+            {
+                continue;
+            }
+            if (!m_addr.empty())
+            {
+                m_addr = m_addr + L",";
+            }
+            m_addr = m_addr + a;
+        }
     }
     hstring Netif::Desc()
     {
@@ -27,6 +51,39 @@ namespace winrt::Maple_App::implementation
     hstring Netif::Addr()
     {
         return m_addr;
+    }
+
+    hstring Netif::IpSummary()
+    {
+        // auto const parent = VisualTreeHelper::GetParent(templateRoot);
+        int cnt4 = 0, cnt6 = 0;
+        for (auto const& [af, _] : m_addresses)
+        {
+            switch (af)
+            {
+            case AF_INET: cnt4++; break;
+            case AF_INET6: cnt6++; break;
+            default: break;
+            }
+        }
+        return to_hstring(cnt4) + L" IPv4 address" + (cnt4 > 1 ? L"es" : L"") + L"; "
+            + to_hstring(cnt6) + L" IPv6 address" + (cnt6 > 1 ? L"es" : L"");
+    }
+    hstring Netif::IpLines()
+    {
+        hstring ret;
+        for (auto const& [_, addr] : m_addresses)
+        {
+            if (ret.empty())
+            {
+                ret = ret + addr;
+            }
+            else
+            {
+                ret = ret + L"\r\n" + addr;
+            }
+        }
+        return ret;
     }
 
     std::vector<Maple_App::Netif> Netif::EnumerateInterfaces() {
@@ -45,7 +102,7 @@ namespace winrt::Maple_App::implementation
             | GAA_FLAG_SKIP_FRIENDLY_NAME;
 
         // default to unspecified address family (both)
-        ULONG family = AF_INET;
+        ULONG family = AF_UNSPEC;
 
 
         PIP_ADAPTER_ADDRESSES pAddresses = NULL;
@@ -94,33 +151,42 @@ namespace winrt::Maple_App::implementation
         std::vector<Maple_App::Netif> ret;
         pCurrAddresses = pAddresses;
         while (pCurrAddresses) {
-            if (!(pCurrAddresses->Flags & IP_ADAPTER_IPV4_ENABLED)) {
+            if (!(pCurrAddresses->Flags & (IP_ADAPTER_IPV4_ENABLED | IP_ADAPTER_IPV6_ENABLED))) {
                 pCurrAddresses = pCurrAddresses->Next;
                 continue;
             }
-            const auto& friendlyName = to_hstring(pCurrAddresses->FriendlyName);
+            const auto friendlyName = to_hstring(pCurrAddresses->FriendlyName);
+            std::vector<std::pair<ADDRESS_FAMILY, hstring>> addrs;
+            hstring desc = friendlyName;
+            if (friendlyName != L"Maple" && std::make_optional(pCurrAddresses->IfIndex) == sniffed) {
+                desc = L"★" + desc;
+            }
 
             pUnicast = pCurrAddresses->FirstUnicastAddress;
             if (pUnicast != NULL) {
                 for (i = 0; pUnicast != NULL; i++) {
-                    // pUnicast->Address.lpSockaddr->sa_family;
                     auto bufSize = static_cast<DWORD>(addrBuf.size());
-                    if (FAILED(WSAAddressToStringW(pUnicast->Address.lpSockaddr, pUnicast->Address.iSockaddrLength, nullptr, addrBuf.data(), &bufSize))) {
+                    auto af = pUnicast->Address.lpSockaddr->sa_family;
+                    if (af == AF_INET || af == AF_INET6) {
+                        if (FAILED(WSAAddressToStringW(pUnicast->Address.lpSockaddr, pUnicast->Address.iSockaddrLength, nullptr, addrBuf.data(), &bufSize))) {
+                            pUnicast = pUnicast->Next;
+                            continue;
+                        }
+                    }
+                    else
+                    {
                         pUnicast = pUnicast->Next;
                         continue;
                     }
                     if (bufSize > 0) {
                         bufSize--;
                     }
-                    hstring addr(addrBuf.data(), bufSize);
-                    hstring desc{ L"" };
-                    if (friendlyName != L"Maple" && std::make_optional(pCurrAddresses->IfIndex) == sniffed) {
-                        desc = L"★";
-                    }
-                    desc = desc + friendlyName + L" (" + addr + L")";
-                    ret.emplace_back(winrt::make<Netif>(desc, addr));
+                    addrs.emplace_back(std::make_pair(af, hstring(addrBuf.data(), bufSize)));
                     pUnicast = pUnicast->Next;
                 }
+            }
+            if (!addrs.empty()) {
+                ret.emplace_back(winrt::make<Netif>(desc, addrs));
             }
 
             pCurrAddresses = pCurrAddresses->Next;

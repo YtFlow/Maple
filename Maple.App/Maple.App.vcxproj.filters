@@ -196,7 +196,6 @@
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="Model\Netif.idl" />
     <Midl Include="Model\ConfigViewModel.idl">
       <Filter>Model</Filter>
     </Midl>
@@ -205,6 +204,9 @@
     </Midl>
     <Midl Include="Converter\BoolToVisibilityConverter.idl">
       <Filter>Converter</Filter>
+    </Midl>
+    <Midl Include="Model\Netif.idl">
+      <Filter>Model</Filter>
     </Midl>
   </ItemGroup>
   <ItemGroup>
