@@ -7,8 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "parcel",
-    "build": "parcel build --target src/editor.html src/editor.html && parcel build --target json.worker.js node_modules/monaco-editor/esm/vs/language/json/json.worker.js && parcel build --target editor.worker.js node_modules/monaco-editor/esm/vs/editor/editor.worker.js",
-    "postinstall": "patch-package"
+    "build": "parcel build --target src/editor.html src/editor.html && parcel build --target json.worker.js node_modules/monaco-editor/esm/vs/language/json/json.worker.js && parcel build --target editor.worker.js node_modules/monaco-editor/esm/vs/editor/editor.worker.js"
   },
   "repository": {
     "type": "git",
@@ -22,7 +21,7 @@
   "homepage": "https://github.com/YtFlow/Maple#readme",
   "devDependencies": {
     "ipaddr.js": "^2.0.1",
-    "monaco-editor": "^0.32.1",
+    "monaco-editor": "^0.36.1",
     "parcel": "^2.7.0",
     "patch-package": "^6.5.0"
   },
