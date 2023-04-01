@@ -6,7 +6,7 @@ A lightweight Universal Windows proxy app based on https://github.com/eycorsican
 - Comes with Leaf core:
    - Domain name resolution with built-in DNS processor
    - `tun`/`shadowsocks`/`socks`/`trojan`/`ws` chainable inbounds
-   - `direct`/`drop`/`tls`/`ws`/`h2`/`shadowsocks`/`vmess`/`trojan`/`socks` chainable outbounds
+   - `direct`/`drop`/`tls`/`ws`/`h2`/`shadowsocks`/`obfs`/`vmess`/`trojan`/`socks` chainable outbounds
    - `failover`/`tryall`/`static` composed outbounds
    - `amux` multiplexing
    - Rule system based on IP, GeoIP and domain name
@@ -67,14 +67,14 @@ Maple as a UWP app is distributed for sideloading only. When installed, it acts 
 - [ ] Unsandboxed Leaf core ([#29](https://github.com/YtFlow/Maple/issues/29))
 - [ ] VPN On Demand
 - [ ] Configurable routing entries
-- [ ] IPv6 support
+- [x] IPv6 support
 
 ## Build
 
 To build Leaf and Maple, you will need:
 
 - a Rust `nightly-x86_64-pc-windows-msvc` toolchain
-- Windows 10 SDK 10.0.22000
+- Windows 10 SDK 10.0.22621
 - Visual Studio 2022 with C++ Development Workflow
    -  [C++/WinRT Visual Studio extension](https://marketplace.visualstudio.com/items?itemName=CppWinRTTeam.cppwinrt101804264) must be installed to generate Windows Metadata.
 - Node.js 19.x or higher
