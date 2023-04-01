@@ -70,12 +70,16 @@ namespace winrt::Maple_Task::implementation
 
         VpnRouteAssignment routeScope{};
         routeScope.ExcludeLocalSubnets(true);
-        routeScope.Ipv4InclusionRoutes(std::vector<VpnRoute>{
+        routeScope.Ipv4InclusionRoutes(std::vector{
             // 直接写 0.0.0.0/0 哪怕绑了接口也会绕回环
             // VpnRoute(HostName{ L"0.0.0.0" }, 0)
             VpnRoute(HostName{ L"0.0.0.0" }, 1),
                 VpnRoute(HostName{ L"128.0.0.0" }, 1),
-        });
+            });
+        routeScope.Ipv6InclusionRoutes(std::vector{
+            VpnRoute(HostName{L"::"}, 1),
+            VpnRoute(HostName{L"8000::"}, 1)
+            });
         // 排除代理服务器的话就会 os 10023 以一种访问权限不允许的方式做了一个访问套接字的尝试
         // routeScope.Ipv4ExclusionRoutes(std::vector<VpnRoute>{
         //     VpnRoute(HostName{ L"172.25.0.0" }, 16)
@@ -161,8 +165,8 @@ namespace winrt::Maple_Task::implementation
             single_threaded_vector(std::vector<HostName>())));
 
         channel.StartWithMainTransport(
-            std::vector<HostName> { HostName{ L"192.168.3.1" } },
-            nullptr,
+            std::vector{ HostName{ L"192.168.3.1" } },
+            std::vector{ HostName{L"fd00::2"} },
             nullptr,
             routeScope,
             dnsAssignment,
