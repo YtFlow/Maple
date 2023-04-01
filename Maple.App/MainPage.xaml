@@ -249,7 +249,7 @@
                                     Margin="0, 0, 0, 8"
                                     Foreground="{ThemeResource SystemControlPageTextBaseMediumBrush}"
                                     TextWrapping="WrapWholeWords">
-                                    Specify a folder for Maple and Leaf to find configuration files, external rule databases and TLS certificates.
+                                    Specify a folder for Maple and Leaf to find configuration files. External rule databases and TLS certificates will remain in the default location.
                                 </TextBlock>
                                 <StackPanel Orientation="Horizontal">
                                     <Button Content="Select Folder" Click="ConfigFolderSelectButton_Click"/>
