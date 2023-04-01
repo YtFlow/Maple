@@ -116,6 +116,7 @@ export const PROXY_PROPERTY_KEY_WS_PATH = 'ws-path'
 export const PROXY_PROPERTY_KEY_WS_HOST = 'ws-host'
 export const PROXY_PROPERTY_KEY_TLS = 'tls'
 export const PROXY_PROPERTY_KEY_TLS_CERT = 'tls-cert'
+export const PROXY_PROPERTY_KEY_TLS_INSECURE = 'tls-insecure'
 export const PROXY_PROPERTY_KEY_OBFS = 'obfs'
 export const PROXY_PROPERTY_KEY_OBFS_HOST = 'obfs-host'
 export const PROXY_PROPERTY_KEY_OBFS_PATH = 'obfs-path'
@@ -135,6 +136,7 @@ export const PROXY_PROPERTY_KEYS_DESC_MAP = new Map([
     [PROXY_PROPERTY_KEY_WS_HOST, 'Host for WebSocket transport.'],
     [PROXY_PROPERTY_KEY_TLS, 'Specify whether TLS transport should be enabled.\n\nDefaults to \`false\`.'],
     [PROXY_PROPERTY_KEY_TLS_CERT, 'Certificate file for TLS transport.'],
+    [PROXY_PROPERTY_KEY_TLS_INSECURE, 'Specify whether TLS certificate verification should be skipped.\n\nDefaults to \`false\`.'],
     [PROXY_PROPERTY_KEY_OBFS, `Specify which obfuscation method to use. Possible values are \`${KNOWN_OBFS_METHODS.join('`, `')}\`.\n\nDefaults to \`http\`.`],
     [PROXY_PROPERTY_KEY_OBFS_HOST, 'Specify the \`host\` parameter for obfuscation.'],
     [PROXY_PROPERTY_KEY_OBFS_PATH, 'Specify the \`path\` parameter for `http` obfuscation.'],
@@ -193,6 +195,7 @@ export const PROXY_PROTOCOL_PROPERTY_KEY_MAP: Record<string, IProxyPropertyKeyDe
             PROXY_PROPERTY_KEY_WS_HOST,
             PROXY_PROPERTY_KEY_TLS,
             PROXY_PROPERTY_KEY_TLS_CERT,
+            PROXY_PROPERTY_KEY_TLS_INSECURE,
             PROXY_PROPERTY_KEY_SNI,
             PROXY_PROPERTY_KEY_QUIC,
             PROXY_PROPERTY_KEY_AMUX,
@@ -209,6 +212,7 @@ export const PROXY_PROTOCOL_PROPERTY_KEY_MAP: Record<string, IProxyPropertyKeyDe
             PROXY_PROPERTY_KEY_WS_HOST,
             PROXY_PROPERTY_KEY_TLS,
             PROXY_PROPERTY_KEY_TLS_CERT,
+            PROXY_PROPERTY_KEY_TLS_INSECURE,
             PROXY_PROPERTY_KEY_SNI,
             PROXY_PROPERTY_KEY_QUIC,
             PROXY_PROPERTY_KEY_AMUX,

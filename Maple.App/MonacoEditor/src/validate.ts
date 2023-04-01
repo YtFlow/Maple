@@ -428,6 +428,7 @@ function validateProxyItem(
                 break
             case facts.PROXY_PROPERTY_KEY_WS:
             case facts.PROXY_PROPERTY_KEY_TLS:
+            case facts.PROXY_PROPERTY_KEY_TLS_INSECURE:
             case facts.PROXY_PROPERTY_KEY_AMUX:
             case facts.PROXY_PROPERTY_KEY_QUIC:
                 validateBoolLike(kv.value, item.lineId, kv.valueStartCol, errors)
