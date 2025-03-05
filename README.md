@@ -1,10 +1,6 @@
 # Maple
 A lightweight Universal Windows proxy app based on https://github.com/eycorsican/leaf
 
-## Sponsorship
-
-[<img src="https://api.gitsponsors.com/api/badge/img?id=347320205" height="20">](https://api.gitsponsors.com/api/badge/link?p=IAy6n4z1OxAz7pMAus4zJ6B4OvhUDFRcIlWIt6H8rtOKTsKn+yc0Og6x7mKnbT7ZBsBnUXk6pShuXm7z+cdJnse1NQBIy0P5V+u/exl0e3iAwyqfqLJvDy9/79AD1Iew)
-
 ## Features
 
 - Comes with Leaf core:
